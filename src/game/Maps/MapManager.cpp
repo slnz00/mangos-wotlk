@@ -315,7 +315,7 @@ Map* MapManager::CreateInstance(uint32 id, Player* player)
         if (!map)
         {
             Difficulty difficulty = entry->IsDynamicDifficultyMap() ? (player->GetGroup() ? player->GetGroup()->GetDifficulty(entry->IsRaid()) : player->GetDifficulty(entry->IsRaid())) : pSave->GetDifficulty();
-            pNewMap = CreateDungeonMap(id, NewInstanceId, difficulty, pSave, player->GetTeam());
+            pNewMap = CreateDungeonMap(id, NewInstanceId, difficulty, pSave, player->GetTeam(), player->GetGroup());
         }
         else if (entry->IsDynamicDifficultyMap() && map->GetDifficulty() != player->GetDifficulty(entry->IsRaid()))
             map->ChangeMapDifficulty(player->GetDifficulty(entry->IsRaid()));
@@ -327,7 +327,7 @@ Map* MapManager::CreateInstance(uint32 id, Player* player)
         NewInstanceId = sObjectMgr.GenerateInstanceLowGuid();
 
         Difficulty diff = player->GetGroup() ? player->GetGroup()->GetDifficulty(entry->IsRaid()) : player->GetDifficulty(entry->IsRaid());
-        pNewMap = CreateDungeonMap(id, NewInstanceId, diff, nullptr, player->GetTeam());
+        pNewMap = CreateDungeonMap(id, NewInstanceId, diff, nullptr, player->GetTeam(), player->GetGroup());
     }
 
     // add a new map object into the registry
@@ -342,7 +342,7 @@ Map* MapManager::CreateInstance(uint32 id, Player* player)
     return map;
 }
 
-DungeonMap* MapManager::CreateDungeonMap(uint32 id, uint32 InstanceId, Difficulty difficulty, DungeonPersistentState* save, Team ownerTeam)
+DungeonMap* MapManager::CreateDungeonMap(uint32 id, uint32 InstanceId, Difficulty difficulty, DungeonPersistentState* save, Team ownerTeam, Group* group)
 {
     // make sure we have a valid map id
     if (!sMapStore.LookupEntry(id))
@@ -362,7 +362,7 @@ DungeonMap* MapManager::CreateDungeonMap(uint32 id, uint32 InstanceId, Difficult
 
     DEBUG_LOG("MapInstanced::CreateDungeonMap: %s map instance %d for %d created with difficulty %d", save ? "" : "new ", InstanceId, id, difficulty);
 
-    DungeonMap* map = new DungeonMap(id, i_gridCleanUpDelay, InstanceId, difficulty);
+    DungeonMap* map = new DungeonMap(id, i_gridCleanUpDelay, InstanceId, difficulty, group);
 
     // Set owner team before initializing
     map->SetInstanceTeam(ownerTeam);

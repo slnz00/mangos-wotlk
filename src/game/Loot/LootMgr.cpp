@@ -1022,7 +1022,7 @@ void Loot::AddItem(uint32 itemid, uint32 count, uint32 randomSuffix, int32 rando
 }
 
 // Calls processor of corresponding LootTemplate (which handles everything including references)
-bool Loot::FillLoot(uint32 loot_id, LootStore const& store, Player* lootOwner, bool /*personal*/, bool noEmptyError)
+bool Loot::FillLoot(uint32 loot_id, LootStore const& store, Player* lootOwner, bool /*personal*/, bool noEmptyError, Creature* creature)
 {
     // Must be provided
     if (!lootOwner)
@@ -1039,7 +1039,7 @@ bool Loot::FillLoot(uint32 loot_id, LootStore const& store, Player* lootOwner, b
 
     m_lootItems.reserve(MAX_NR_LOOT_ITEMS);
 
-    tab->Process(*this, lootOwner, store.IsRatesAllowed()); // Processing is done there, callback via Loot::AddItem()
+    tab->Process(*this, lootOwner, store.IsRatesAllowed(), nullptr, creature); // Processing is done there, callback via Loot::AddItem()
 
     // fill the loot owners right here so its impossible from this point to change loot result
     Player* masterLooter = nullptr;
@@ -1800,7 +1800,7 @@ Loot::Loot(Player* player, Creature* creature, LootType type) :
                 SetGroupLootRight(player);
             m_clientLootType = CLIENT_LOOT_CORPSE;
 
-            if ((creatureInfo->LootId && FillLoot(creatureInfo->LootId, LootTemplates_Creature, player, false)) || creatureInfo->MaxLootGold > 0)
+            if ((creatureInfo->LootId && FillLoot(creatureInfo->LootId, LootTemplates_Creature, player, false, false, creature)) || creatureInfo->MaxLootGold > 0)
             {
                 GenerateMoneyLoot(creatureInfo->MinLootGold, creatureInfo->MaxLootGold);
                 // loot may be anyway empty (loot may be empty or contain items that no one have right to loot)
@@ -1943,7 +1943,7 @@ Loot::Loot(Player* player, GameObject* gameObject, LootType type, bool lootSnaps
                         m_isChest = true;
 
                     SetGroupLootRight(player);
-                    FillLoot(lootid, LootTemplates_Gameobject, player, false);
+                    FillLoot(lootid, LootTemplates_Gameobject, player, false, false);
                     GenerateMoneyLoot(gameObject->GetGOInfo()->MinMoneyLoot, gameObject->GetGOInfo()->MaxMoneyLoot);
 
                     if (m_lootType == LOOT_FISHINGHOLE)
@@ -2753,7 +2753,7 @@ void LootTemplate::AddEntry(LootStoreItem const& item)
 }
 
 // Rolls for every item in the template and adds the rolled items the the loot
-void LootTemplate::Process(Loot& loot, Player const* lootOwner, bool rate, LootStatsData* lootStatsData /*= nullptr*/) const
+void LootTemplate::Process(Loot& loot, Player const* lootOwner, bool rate, LootStatsData* lootStatsData /*= nullptr*/, Creature* creature) const
 {
     LootStats::GroupStats* groupStats = nullptr;
     if (lootStatsData)
@@ -2801,8 +2801,35 @@ void LootTemplate::Process(Loot& loot, Player const* lootOwner, bool rate, LootS
     }
 
     // Now processing groups
-    for (auto const& Group : Groups)
+    for (auto const& Group : Groups) {
         Group.Process(loot, lootOwner, rate, lootStatsData);
+
+        if (roll_chance_i(GetDoubleDropChance(creature)))
+        {
+            Group.Process(loot, lootOwner, rate, lootStatsData);
+        }
+    }
+}
+
+uint32 LootTemplate::GetDoubleDropChance(Creature* creature) const {
+    if (!creature)
+    {
+        return 0;
+    }
+    if (creature->IsElite())
+    {
+        return sWorld.getConfig(CONFIG_UINT32_DOUBLE_DROP_CHANCE_ELITE);
+    }
+    if (creature->IsRare())
+    {
+        return sWorld.getConfig(CONFIG_UINT32_DOUBLE_DROP_CHANCE_RARE);
+    }
+    if (creature->IsBoss())
+    {
+        return sWorld.getConfig(CONFIG_UINT32_DOUBLE_DROP_CHANCE_BOSS);
+    }
+    
+    return sWorld.getConfig(CONFIG_UINT32_DOUBLE_DROP_CHANCE_NORMAL);
 }
 
 // True if template includes at least 1 quest drop entry

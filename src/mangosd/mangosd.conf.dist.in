@@ -2016,6 +2016,30 @@ CharDelete.KeepDays = 30
 #
 ###################################################################################################################
 
+###################################################################################################################
+# CUSTOM CONFIGURATION:
+#
+#    Instance.AutoScaling
+#        Enable or disable instance auto-scaling based on player count.
+#        Value of Instance.Scale
+#        Default: 0  - Disabled
+#                 1  - Enable
+#
+#    Creature.Scale.Default.Damage
+#    Creature.Scale.Default.Health
+#    Creature.Scale.Instance.Damage
+#    Creature.Scale.Instance.Health
+#        Fixed scale for creatures health and damage.
+#        Default: 1.0
+#
+#    Creature.DoubleDrop.Chance.Normal
+#    Creature.DoubleDrop.Chance.Elite
+#    Creature.DoubleDrop.Chance.Boss
+#    Creature.DoubleDrop.Chance.Rare
+#        Default: 0
+#
+###################################################################################################################
+
 Metric.Enable = 0
 Metric.Address = "127.0.0.1"
 Metric.Port = 8086

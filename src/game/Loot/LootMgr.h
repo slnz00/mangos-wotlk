@@ -289,12 +289,14 @@ class LootTemplate
         // Adds an entry to the group (at loading stage)
         void AddEntry(LootStoreItem const& item);
         // Rolls for every item in the template and adds the rolled items the the loot
-        void Process(Loot& loot, Player const* lootOwner, bool rate, LootStatsData* lootStatsData = nullptr) const;
+        void Process(Loot& loot, Player const* lootOwner, bool rate, LootStatsData* lootStatsData = nullptr, Creature* creature = nullptr) const;
 
         // True if template includes at least 1 quest drop entry
         bool HasQuestDrop(uint8 groupId = 0) const;
         // True if template includes at least 1 quest drop for an active quest of the player
         bool HasQuestDropForPlayer(Player const* player, uint8 groupId = 0) const;
+        uint32 GetDoubleDropChance(Creature* creature) const;
+
         // True if at least one player fulfills loot condition
         static bool PlayerOrGroupFulfilsCondition(const Loot& loot, Player const* lootOwner, uint16 conditionId);
 
@@ -415,7 +417,7 @@ class Loot
         void GroupCheck();
         void SetGroupLootRight(Player* player);
         void GenerateMoneyLoot(uint32 minAmount, uint32 maxAmount);
-        bool FillLoot(uint32 loot_id, LootStore const& store, Player* lootOwner, bool personal, bool noEmptyError = false);
+        bool FillLoot(uint32 loot_id, LootStore const& store, Player* lootOwner, bool personal, bool noEmptyError = false, Creature* creature = nullptr);
         void ForceLootAnimationClientUpdate() const;
         void SetPlayerIsLooting(Player* player);
         void SetPlayerIsNotLooting(Player* player);

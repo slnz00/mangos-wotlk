@@ -600,6 +600,9 @@ class Creature : public Unit
         bool Create(uint32 dbGuid, uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* cinfo, const CreatureData* data = nullptr, GameEventCreatureData const* eventData = nullptr);
         bool LoadCreatureAddon(bool reload);
 
+        float GetHealthScale() const; 
+        float GetDamageScale() const; 
+
         // SelectLevel set creature bases stats for given level or for default levels stored in db
         void SelectLevel(uint32 forcedLevel = USE_DEFAULT_DATABASE_LEVEL);
         void LoadEquipment(uint32 equip_entry, bool force = false);
@@ -659,6 +662,24 @@ class Creature : public Unit
 
             uint32 rank = GetCreatureInfo()->Rank;
             return rank != CREATURE_ELITE_NORMAL && rank != CREATURE_ELITE_RARE;
+        }
+
+        bool IsRare() const
+        {
+            if (IsPet())
+                return false;
+
+            uint32 rank = GetCreatureInfo()->Rank;
+            return rank == CREATURE_ELITE_RARE;
+        }
+
+        bool IsBoss() const
+        {
+            if (IsPet())
+                return false;
+
+            uint32 rank = GetCreatureInfo()->Rank;
+            return rank == CREATURE_ELITE_RAREELITE || rank == CREATURE_ELITE_WORLDBOSS;
         }
 
         bool IsWorldBoss() const

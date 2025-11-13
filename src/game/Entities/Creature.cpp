@@ -1333,8 +1333,77 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
     WorldDatabase.CommitTransaction();
 }
 
+float Creature::GetHealthScale() const
+{
+    Map* map = GetMap();
+
+    if (!map || !map->IsDungeon())
+    {
+        if (IsRare())
+        {
+            return sWorld.getConfig(CONFIG_FLOAT_SCALE_RARE_HEALTH);
+        }
+
+        return sWorld.getConfig(CONFIG_FLOAT_SCALE_DEFAULT_HEALTH);
+    }
+
+    bool autoScaleEnabled = sWorld.getConfig(CONFIG_BOOL_INSTANCE_AUTO_SCALE);
+    bool defaultScale = sWorld.getConfig(CONFIG_FLOAT_SCALE_INSTANCE_HEALTH);
+
+    if (autoScaleEnabled)
+    {
+        Group* group = map->GetGroup();
+        uint32 playerCount = group ? group->GetMembersCount() : 1;
+
+        if (playerCount < 3)
+        {
+            return defaultScale * 0.6f;
+        }
+
+        return playerCount * (defaultScale / 5.0f);
+    }
+
+    return defaultScale;
+}
+
+float Creature::GetDamageScale() const
+{
+    Map* map = GetMap();
+ 
+    if (!map || !map->IsDungeon())
+    {
+        if (IsRare())
+        {
+            return sWorld.getConfig(CONFIG_FLOAT_SCALE_RARE_DAMAGE);
+        }
+
+        return sWorld.getConfig(CONFIG_FLOAT_SCALE_DEFAULT_DAMAGE);
+    }
+
+    bool autoScaleEnabled = sWorld.getConfig(CONFIG_BOOL_INSTANCE_AUTO_SCALE);
+    bool defaultScale = sWorld.getConfig(CONFIG_FLOAT_SCALE_INSTANCE_DAMAGE);
+    
+    if (autoScaleEnabled)
+    {
+        Group* group = map->GetGroup();
+        uint32 playerCount = group ? group->GetMembersCount() : 1;
+
+        if (playerCount <= 5)
+        {
+            return defaultScale;
+        }
+            
+        return defaultScale + (playerCount - 5) * (defaultScale / 4.0f);
+    }
+
+    return defaultScale;
+}
+
 void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
 {
+    float healthScale = GetHealthScale();
+    float damageScale = GetDamageScale();
+
     CreatureInfo const* cinfo = GetCreatureInfo();
     if (!cinfo)
         return;
@@ -1377,7 +1446,7 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
     float spirit = 0.f;
 
     float damageMod = _GetDamageMod(rank);
-    float damageMulti = cinfo->DamageMultiplier * damageMod;
+    float damageMulti = cinfo->DamageMultiplier * damageMod * damageScale;
     bool usedDamageMulti = false;
 
     if (CreatureClassLvlStats const* cCLS = sObjectMgr.GetCreatureClassLvlStats(level, cinfo->UnitClass, cinfo->Expansion))
@@ -1481,7 +1550,7 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
         }
     }
 
-    health *= _GetHealthMod(rank); // Apply custom config settting
+    health *= _GetHealthMod(rank) * healthScale; // Apply custom config settting
     if (health < 1)
         health = 1;
 
@@ -1536,8 +1605,8 @@ void Creature::SelectLevel(uint32 forcedLevel /*= USE_DEFAULT_DATABASE_LEVEL*/)
     SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, maxRangedDmg);
 
     // attack power
-    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, meleeAttackPwr * damageMod);
-    SetModifierValue(UNIT_MOD_ATTACK_POWER_RANGED, BASE_VALUE, rangedAttackPwr * damageMod);
+    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, meleeAttackPwr * damageMod * damageScale);
+    SetModifierValue(UNIT_MOD_ATTACK_POWER_RANGED, BASE_VALUE, rangedAttackPwr * damageMod * damageScale);
 
     // primary attributes
     SetCreateStat(STAT_STRENGTH, strength);

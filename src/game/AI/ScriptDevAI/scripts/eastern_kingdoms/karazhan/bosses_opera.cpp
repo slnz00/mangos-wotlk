@@ -1118,19 +1118,23 @@ struct boss_julianneAI : public ScriptedAI
     }
 };
 
-// 30907 - Drink Poison
-struct DrinkPoisonJulianne : public SpellScript
+bool EffectDummyCreature_spell_drink_poison(Unit* /*pCaster*/, uint32 uiSpellId, SpellEffectIndex uiEffIndex, Creature* creatureTarget, ObjectGuid /*originalCasterGuid*/)
 {
-    void OnEffectExecute(Spell* spell, SpellEffectIndex /*effIdx*/) const override
+    // always check spellid and effectindex
+    if (uiSpellId == SPELL_DRINK_POISON && uiEffIndex == EFFECT_INDEX_0)
     {
-        Unit* target = spell->GetUnitTarget();
         // Set fake death on poison
-        if (boss_julianneAI* julianneAI = dynamic_cast<boss_julianneAI*>(target->AI()))
-            julianneAI->DoSetFakeDeath();
+        if (boss_julianneAI* pJulianneAI = dynamic_cast<boss_julianneAI*>(creatureTarget->AI()))
+            pJulianneAI->DoSetFakeDeath();
 
-        DoScriptText(SAY_JULIANNE_DEATH01, target);
+        DoScriptText(SAY_JULIANNE_DEATH01, creatureTarget);
+
+        // always return true when we are handling this spell and effect
+        return true;
     }
-};
+
+    return false;
+}
 
 struct boss_romuloAI : public ScriptedAI
 {
@@ -1398,12 +1402,11 @@ void AddSC_bosses_opera()
     pNewScript = new Script;
     pNewScript->Name = "boss_julianne";
     pNewScript->GetAI = &GetNewAIInstance<boss_julianneAI>;
+    pNewScript->pEffectDummyNPC = &EffectDummyCreature_spell_drink_poison;
     pNewScript->RegisterSelf();
 
     pNewScript = new Script;
     pNewScript->Name = "boss_romulo";
     pNewScript->GetAI = &GetNewAIInstance<boss_romuloAI>;
     pNewScript->RegisterSelf();
-
-    RegisterSpellScript<DrinkPoisonJulianne>("spell_drink_poison_julianne");
 }

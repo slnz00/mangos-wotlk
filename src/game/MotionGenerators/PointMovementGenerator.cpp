@@ -102,8 +102,6 @@ void PointMovementGenerator::Move(Unit& unit)
         init.SetFly();
     if (m_o != 0.f)
         init.SetFacing(m_o);
-    if (m_animTier)
-        init.SetAnimation(*m_animTier, 0);
     init.SetVelocity(m_speed);
     init.Launch();
 }
@@ -227,7 +225,7 @@ void PointTOLMovementGenerator::Move(Unit& unit)
         init.SetFacing(m_o);
     init.SetVelocity(m_speed);
     init.SetFly();
-    init.SetAnimation((m_takeOff ? AnimTier::Fly : AnimTier::Ground), 0);
+    init.SetAnimation((m_takeOff ? Movement::FlyToGround : Movement::ToGround));
     init.SetWalk(!unit.hasUnitState(UNIT_STAT_RUNNING));
     init.Launch();
 }

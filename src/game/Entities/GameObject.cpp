@@ -1607,8 +1607,7 @@ void GameObject::Use(Unit* user, SpellEntry const* spellInfo)
             std::set<uint32> confirmedGoCasts =
             {
                 6636,
-                24425,
-                47680
+                24425
             };
             if (confirmedGoCasts.find(goInfo->trap.spellId) != confirmedGoCasts.end())
                 caster = nullptr;

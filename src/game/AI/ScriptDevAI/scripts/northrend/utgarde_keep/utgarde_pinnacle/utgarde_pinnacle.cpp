@@ -86,7 +86,7 @@ void instance_pinnacle::OnPlayerEnter(Player* pPlayer)
     {
         if (Creature* pSvala = pPlayer->SummonCreature(NPC_SVALA_SORROWGRAVE, aSvalaSpawnPos[0], aSvalaSpawnPos[1], aSvalaSpawnPos[2], aSvalaSpawnPos[3], TEMPSPAWN_DEAD_DESPAWN, 0))
         {
-            pSvala->SetAnimTier(AnimTier::Hover);
+            pSvala->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_FLY_ANIM);
             pSvala->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PLAYER);
         }
 
@@ -384,7 +384,7 @@ void instance_pinnacle::JustDidDialogueStep(int32 iEntry)
                 pSvala->GetRespawnCoord(fX, fY, fZ);
 
                 pSvala->SetLevitate(true);
-                pSvala->SetAnimTier(AnimTier::Hover);
+                pSvala->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_FLY_ANIM);
                 pSvala->GetMotionMaster()->MovePoint(0, fX, fY, fZ + 5.0f);
             }
             break;
@@ -400,7 +400,7 @@ void instance_pinnacle::JustDidDialogueStep(int32 iEntry)
                 pSvala->ForcedDespawn(2000);
 
                 if (Creature* pBoss = pSvala->SummonCreature(NPC_SVALA_SORROWGRAVE, aSvalaSpawnPos[0], aSvalaSpawnPos[1], aSvalaSpawnPos[2], aSvalaSpawnPos[3], TEMPSPAWN_DEAD_DESPAWN, 0))
-                    pBoss->SetAnimTier(AnimTier::Hover);
+                    pBoss->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_FLY_ANIM);
             }
             break;
         case SAY_INTRO_5:

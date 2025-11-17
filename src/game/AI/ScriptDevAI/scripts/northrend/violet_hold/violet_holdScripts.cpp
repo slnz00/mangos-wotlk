@@ -38,15 +38,20 @@ EndContentData */
 ## npc_door_seal
 ######*/
 
-// 58040 - Destroy Door Seal
-struct DestroyDoorSeal : public AuraScript
+bool EffectDummyCreature_npc_door_seal(Unit* /*pCaster*/, uint32 uiSpellId, SpellEffectIndex uiEffIndex, Creature* pCreatureTarget, ObjectGuid /*originalCasterGuid*/)
 {
-    void OnPeriodicDummy(Aura* aura) const override
+    // always check spellid and effectindex
+    if (uiSpellId == SPELL_DESTROY_DOOR_SEAL && uiEffIndex == EFFECT_INDEX_0)
     {
-        if (instance_violet_hold* instance = dynamic_cast<instance_violet_hold*>(aura->GetTarget()->GetInstanceData()))
-            instance->SetData(TYPE_SEAL, SPECIAL);
+        if (instance_violet_hold* pInstance = (instance_violet_hold*)pCreatureTarget->GetInstanceData())
+            pInstance->SetData(TYPE_SEAL, SPECIAL);
+
+        // always return true when we are handling this spell and effect
+        return true;
     }
-};
+
+    return false;
+}
 
 /*######
 ## npc_sinclari
@@ -373,20 +378,25 @@ struct npc_teleportation_portalAI : public ScriptedAI
     void UpdateAI(const uint32 uiDiff) override { }
 };
 
-// 58008 - Portal Periodic
-struct PortalPeriodicVioletHold : public AuraScript
+bool EffectDummyCreature_npc_teleportation_portal(Unit* /*pCaster*/, uint32 uiSpellId, SpellEffectIndex uiEffIndex, Creature* pCreatureTarget, ObjectGuid /*originalCasterGuid*/)
 {
-    void OnPeriodicDummy(Aura* aura) const override
+    // always check spellid and effectindex
+    if (uiSpellId == SPELL_PORTAL_PERIODIC && uiEffIndex == EFFECT_INDEX_0)
     {
-        aura->GetTarget()->AI()->SendAIEvent(AI_EVENT_CUSTOM_A, aura->GetTarget(), aura->GetTarget());
+        pCreatureTarget->AI()->SendAIEvent(AI_EVENT_CUSTOM_A, pCreatureTarget, pCreatureTarget);
+
+        // always return true when we are handling this spell and effect
+        return true;
     }
-};
+
+    return false;
+}
 
 /*######
 ## spell_teleport_inside_violet_hold - 62138
 ######*/
 
-struct TeleportInsideVioletHold : public SpellScript
+struct spell_teleport_inside_violet_hold : public SpellScript
 {
     void OnEffectExecute(Spell* spell, SpellEffectIndex effIdx) const override
     {
@@ -405,7 +415,7 @@ struct TeleportInsideVioletHold : public SpellScript
 ## spell_void_shift_aura - 54361, 59743
 ######*/
 
-struct VoidShiftAura : public AuraScript
+struct spell_void_shift_aura : public AuraScript
 {
     void OnApply(Aura* aura, bool apply) const override
     {
@@ -421,6 +431,11 @@ struct VoidShiftAura : public AuraScript
 void AddSC_violet_hold()
 {
     Script* pNewScript = new Script;
+    pNewScript->Name = "npc_door_seal";
+    pNewScript->pEffectDummyNPC = &EffectDummyCreature_npc_door_seal;
+    pNewScript->RegisterSelf();
+
+    pNewScript = new Script;
     pNewScript->Name = "npc_sinclari";
     pNewScript->pGossipHello = &GossipHello_npc_sinclari;
     pNewScript->pGossipSelect = &GossipSelect_npc_sinclari;
@@ -434,10 +449,9 @@ void AddSC_violet_hold()
     pNewScript = new Script;
     pNewScript->Name = "npc_teleportation_portal";
     pNewScript->GetAI = &GetNewAIInstance<npc_teleportation_portalAI>;
+    pNewScript->pEffectDummyNPC = &EffectDummyCreature_npc_teleportation_portal;
     pNewScript->RegisterSelf();
 
-    RegisterSpellScript<DestroyDoorSeal>("spell_destroy_door_seal");
-    RegisterSpellScript<PortalPeriodicVioletHold>("spell_portal_periodic_violet_hold");
-    RegisterSpellScript<TeleportInsideVioletHold>("spell_teleport_inside_violet_hold");
-    RegisterSpellScript<VoidShiftAura>("spell_void_shift_aura");
+    RegisterSpellScript<spell_teleport_inside_violet_hold>("spell_teleport_inside_violet_hold");
+    RegisterSpellScript<spell_void_shift_aura>("spell_void_shift_aura");
 }

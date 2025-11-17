@@ -966,13 +966,6 @@ void ScriptMgr::LoadScripts(ScriptMapType scriptType)
                     continue;
                 }
                 break;
-            case SCRIPT_COMMAND_SET_ANIM_TIER: // 57
-                if (AnimTier(tmp.animTier.animTier) >= AnimTier::Max)
-                {
-                    sLog.outErrorDb("Table `%s` has invalid recall respawn flags assigned %u", tablename, tmp.recallOrRespawnPassenger.recallRespawnFlag);
-                    continue;
-                }
-                break;
             default:
             {
                 sLog.outErrorDb("Table `%s` unknown command %u, skipping", tablename, tmp.command);
@@ -1844,17 +1837,14 @@ bool ScriptAction::ExecuteDbscriptCommand(WorldObject* pSource, WorldObject* pTa
             if (LogIfNotUnit(pSource))
                 break;
 
-            Unit* unit = static_cast<Unit*>(pSource);
             Creature* creature = static_cast<Creature*>(pSource);
-
-            std::optional<AnimTier> animTier = m_script->moveTo.flags & 0x1 ? std::make_optional(AnimTier(m_script->textId[1])) : std::nullopt;
 
             if (m_script->textId[0])
             {
                 if (m_script->textId[0] == 1 || m_script->textId[0] == 2 && !creature->GetCreatureGroup())
                 {
                     Position const& respPos = creature->GetRespawnPosition();
-                    creature->GetMotionMaster()->MovePoint(0, respPos, ForcedMovement(m_script->moveTo.forcedMovement), m_script->speed, true, creature->GetObjectGuid(), m_script->moveTo.relayId, animTier);
+                    creature->GetMotionMaster()->MovePoint(0, respPos, ForcedMovement(m_script->moveTo.forcedMovement), 0.f, true, creature->GetObjectGuid(), m_script->moveTo.relayId);
                 }
                 else if (m_script->textId[0] == 2)
                 {
@@ -1866,29 +1856,34 @@ bool ScriptAction::ExecuteDbscriptCommand(WorldObject* pSource, WorldObject* pTa
             // Just turn around
             if ((m_script->x == 0.0f && m_script->y == 0.0f && m_script->z == 0.0f) ||
                     // Check point-to-point distance, hence revert effect of bounding radius
-                unit->IsWithinDist3d(m_script->x, m_script->y, m_script->z, 0.01f - unit->GetObjectBoundingRadius()))
+                    ((Unit*)pSource)->IsWithinDist3d(m_script->x, m_script->y, m_script->z, 0.01f - ((Unit*)pSource)->GetObjectBoundingRadius()))
             {
-                unit->SetFacingTo(m_script->o);
+                ((Unit*)pSource)->SetFacingTo(m_script->o);
                 break;
             }
 
             // Change Z cord only
             if (m_script->x == 0.0f && m_script->y == 0.0f && m_script->z != 0.0f)
             {
-                unit->GetMotionMaster()->MovePoint(0, Position(pSource->GetPositionX(), pSource->GetPositionY(), pSource->GetPositionZ() + m_script->z, 0.f), ForcedMovement(m_script->moveTo.forcedMovement), m_script->speed, true, creature->GetObjectGuid(), m_script->moveTo.relayId, animTier);
+                ((Unit*)pSource)->GetMotionMaster()->MovePoint(0, pSource->GetPositionX(), pSource->GetPositionY(), pSource->GetPositionZ() + m_script->z);
                 break;
             }
 
             // For command additional teleport the unit
             if (m_script->data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
             {
-                unit->NearTeleportTo(m_script->x, m_script->y, m_script->z, m_script->o != 0.0f ? m_script->o : unit->GetOrientation());
+                ((Unit*)pSource)->NearTeleportTo(m_script->x, m_script->y, m_script->z, m_script->o != 0.0f ? m_script->o : ((Unit*)pSource)->GetOrientation());
                 break;
             }
 
             // Normal Movement
-            unit->GetMotionMaster()->Clear();
-            unit->GetMotionMaster()->MovePoint(0, Position(m_script->x, m_script->y, m_script->z, m_script->o), ForcedMovement(m_script->moveTo.forcedMovement), m_script->speed, true, pTarget ? pTarget->GetObjectGuid() : ObjectGuid(), m_script->moveTo.relayId, animTier);
+            if (m_script->moveTo.travelSpeed)
+                ((Unit*)pSource)->GetMotionMaster()->MoveCharge(m_script->x, m_script->y, m_script->z, m_script->moveTo.travelSpeed * 0.01f, 0);
+            else
+            {
+                ((Unit*)pSource)->GetMotionMaster()->Clear();
+                ((Unit*)pSource)->GetMotionMaster()->MovePoint(0, Position(m_script->x, m_script->y, m_script->z, m_script->o), ForcedMovement(m_script->moveTo.forcedMovement), 0.f, true, pTarget ? pTarget->GetObjectGuid() : ObjectGuid(), m_script->moveTo.relayId);
+            }
             break;
         }
         case SCRIPT_COMMAND_FLAG_SET:                       // 4
@@ -2303,7 +2298,6 @@ bool ScriptAction::ExecuteDbscriptCommand(WorldObject* pSource, WorldObject* pTa
 
             ForcedMovement forcedMovement = ForcedMovement(m_script->textId[0]);
             uint32 movementFlags = (uint32)m_script->textId[1];
-            AnimTier animTier = (AnimTier)m_script->textId[2];
 
             auto fSlot = source->GetFormationSlot();
             if (fSlot)
@@ -2373,7 +2367,7 @@ bool ScriptAction::ExecuteDbscriptCommand(WorldObject* pSource, WorldObject* pTa
                     if (m_script->movementFloat.verticalSpeed > 0.f)
                         source->GetMotionMaster()->MovePathAndJumpVerticalSpeed(wanderORpathId, m_script->speed, m_script->movementFloat.verticalSpeed, forcedMovement, targetGuid);
                     else
-                        source->GetMotionMaster()->MovePath(wanderORpathId, wp_origin, forcedMovement, m_script->movement.timerOrPassTargetOrCyclic & 0x4, m_script->speed, m_script->movement.timerOrPassTargetOrCyclic & 0x8, targetGuid, m_script->movement.timerOrPassTargetOrCyclic & 0x10 ? std::make_optional(animTier) : std::nullopt);
+                        source->GetMotionMaster()->MovePath(wanderORpathId, wp_origin, forcedMovement, m_script->movement.timerOrPassTargetOrCyclic & 0x4, m_script->speed, m_script->movement.timerOrPassTargetOrCyclic & 0x8, targetGuid);
                     break;
                 }
                 case LINEAR_WP_MOTION_TYPE:
@@ -2893,9 +2887,9 @@ bool ScriptAction::ExecuteDbscriptCommand(WorldObject* pSource, WorldObject* pTa
             if (m_script->data_flags & SCRIPT_FLAG_COMMAND_ADDITIONAL)
             {
                 if (m_script->fly.fly)
-                    pSource->SetByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_ANIM_TIER, uint8(AnimTier::Hover));
+                    pSource->SetByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_MISC_FLAGS, UNIT_BYTE1_FLAG_FLY_ANIM);
                 else
-                    pSource->RemoveByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_ANIM_TIER, uint8(AnimTier::Ground));
+                    pSource->RemoveByteFlag(UNIT_FIELD_BYTES_1, UNIT_BYTES_1_OFFSET_MISC_FLAGS, UNIT_BYTE1_FLAG_FLY_ANIM);
             }
 
             ((Creature*)pSource)->SetHover(m_script->fly.fly);
@@ -3338,14 +3332,6 @@ bool ScriptAction::ExecuteDbscriptCommand(WorldObject* pSource, WorldObject* pTa
                 static_cast<Unit*>(pSource)->GetVehicleInfo()->RespawnAccessories(seatIndex);
             else if (flags == 3)
                 static_cast<Unit*>(pSource)->GetVehicleInfo()->RecallAndRespawnAccessories(m_script->recallOrRespawnPassenger.searchRadius, seatIndex);
-            break;
-        }
-        case SCRIPT_COMMAND_SET_ANIM_TIER:
-        {
-            if (LogIfNotUnit(pSource))
-                break;
-
-            static_cast<Unit*>(pSource)->SetAnimTier(AnimTier(m_script->animTier.animTier));
             break;
         }
         default:

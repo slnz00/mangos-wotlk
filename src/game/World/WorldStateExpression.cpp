@@ -419,7 +419,7 @@ std::shared_ptr<std::map<int32, WorldStateExpressionEntry>> WorldStateExpression
     return expressions;
 }
 
-bool WorldStateExpressionMgr::Meets(Map const* map, int32 Id) const
+bool WorldStateExpressionMgr::Meets(Map const* map, int32 Id)
 {
     auto expressions = map->GetMapDataContainer().GetWorldStateExpressions();
     auto itr = expressions->find(Id);

@@ -24,15 +24,15 @@ EndScriptData */
 #include "AI/ScriptDevAI/include/sc_common.h"
 #include "nexus.h"
 #include "Spells/SpellAuras.h"
-#include "AI/ScriptDevAI/base/BossAI.h"
+#include "AI/ScriptDevAI/base/CombatAI.h"
 
 enum
 {
-    SAY_AGGRO                   = 26176,
-    SAY_CRYSTAL_NOVA            = 29618,
-    SAY_ENRAGE                  = 29619,
-    SAY_KILL                    = 29620,
-    SAY_DEATH                   = 29621,
+    SAY_AGGRO                   = -1576016,
+    SAY_CRYSTAL_NOVA            = -1576017,
+    SAY_ENRAGE                  = -1576018,
+    SAY_KILL                    = -1576019,
+    SAY_DEATH                   = -1576020,
 
     MAX_INTENSE_COLD_STACK      = 2,            // the max allowed stacks for the achiev to pass
 
@@ -52,6 +52,10 @@ enum
 
 enum KeristraszaActions
 {
+    KERISTRASZA_ACTION_TAIL_SWEEP,
+    KERISTRASZA_ACTION_CRYSTALLIZE,
+    KERISTRASZA_ACTION_CRYSTALFIRE_BREATH,
+    KERISTRASZA_ACTION_ENRAGE,
     KERISTRASZA_ACTION_MAX,
 };
 
@@ -59,14 +63,16 @@ enum KeristraszaActions
 ## boss_keristrasza
 ######*/
 
-struct boss_keristraszaAI : public BossAI
+struct boss_keristraszaAI : public CombatAI
 {
-    boss_keristraszaAI(Creature* creature) : BossAI(creature, KERISTRASZA_ACTION_MAX), m_instance(static_cast<instance_nexus*>(creature->GetInstanceData())), m_isRegularMode(creature->GetMap()->IsRegularDifficulty())
+    boss_keristraszaAI(Creature* creature) : CombatAI(creature, KERISTRASZA_ACTION_MAX), m_instance(static_cast<instance_nexus*>(creature->GetInstanceData()))
     {
-        AddOnAggroText(SAY_AGGRO);
-        AddOnDeathText(SAY_DEATH);
-        AddOnKillText(SAY_KILL);
-        SetDataType(TYPE_KERISTRASZA);
+        AddCombatAction(KERISTRASZA_ACTION_TAIL_SWEEP, 10000u);
+        AddCombatAction(KERISTRASZA_ACTION_CRYSTALFIRE_BREATH, 15000u);
+        AddCombatAction(KERISTRASZA_ACTION_CRYSTALLIZE, 18000u);
+        AddTimerlessCombatAction(KERISTRASZA_ACTION_ENRAGE, true);
+
+        m_isRegularMode = creature->GetMap()->IsRegularDifficulty();
     }
 
     instance_nexus* m_instance;
@@ -74,7 +80,7 @@ struct boss_keristraszaAI : public BossAI
 
     void Reset() override
     {
-        BossAI::Reset();
+        CombatAI::Reset();
 
         if (!m_instance)
             return;
@@ -82,28 +88,87 @@ struct boss_keristraszaAI : public BossAI
         if (m_creature->IsAlive())
         {
             if (m_instance->GetData(TYPE_KERISTRASZA) != SPECIAL)
-                DoCastSpellIfCan(nullptr, SPELL_FROZEN_PRISON, CAST_TRIGGERED);
+                DoCastSpellIfCan(m_creature, SPELL_FROZEN_PRISON, CAST_TRIGGERED);
         }
     }
 
     void Aggro(Unit* who) override
     {
-        BossAI::Aggro(who);
+        DoScriptText(SAY_AGGRO, m_creature);
 
-        DoCastSpellIfCan(nullptr, SPELL_INTENSE_COLD, CAST_AURA_NOT_PRESENT);
+        DoCastSpellIfCan(m_creature, SPELL_INTENSE_COLD, CAST_AURA_NOT_PRESENT);
+
+        if (m_instance)
+            m_instance->SetData(TYPE_KERISTRASZA, IN_PROGRESS);
     }
 
-    void OnSpellCast(SpellEntry const* spellInfo, Unit* /*target*/) override
+    void JustDied(Unit* killer) override
     {
-        if (spellInfo->Id == SPELL_CRYSTALLIZE)
-            DoBroadcastText(SAY_CRYSTAL_NOVA, m_creature);
-        else if (spellInfo->Id == SPELL_ENRAGE)
-            DoBroadcastText(SAY_ENRAGE, m_creature);
+        DoScriptText(SAY_DEATH, m_creature);
+
+        if (m_instance)
+            m_instance->SetData(TYPE_KERISTRASZA, DONE);
+    }
+
+    void KilledUnit(Unit* victim) override
+    {
+        CombatAI::KilledUnit(victim);
+
+        if (urand(0, 1))
+            DoScriptText(SAY_KILL, m_creature);
+    }
+
+    void ExecuteAction(uint32 action) override
+    {
+        switch (action)
+        {
+            case KERISTRASZA_ACTION_TAIL_SWEEP:
+                if (DoCastSpellIfCan(m_creature, SPELL_TAIL_SWEEP) == CAST_OK)
+                    ResetCombatAction(action, 10000);
+                break;
+            case KERISTRASZA_ACTION_CRYSTALFIRE_BREATH:
+                if (DoCastSpellIfCan(m_creature, m_isRegularMode ? SPELL_CRYSTALFIRE_BREATH : SPELL_CRYSTALFIRE_BREATH_H) == CAST_OK)
+                    ResetCombatAction(action, 15000);
+                break;
+            case KERISTRASZA_ACTION_CRYSTALLIZE:
+                // different spells for heroic and non heroic
+                if (m_isRegularMode)
+                {
+                    if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 1, SPELL_CRYSTAL_CHAINS, SELECT_FLAG_PLAYER))
+                    {
+                        if (DoCastSpellIfCan(pTarget, SPELL_CRYSTAL_CHAINS) == CAST_OK)
+                            ResetCombatAction(action, 25000);
+                    }
+                }
+                else
+                {
+                    if (DoCastSpellIfCan(m_creature, SPELL_CRYSTALLIZE) == CAST_OK)
+                    {
+                        ResetCombatAction(action, 25000);
+                        DoScriptText(SAY_CRYSTAL_NOVA, m_creature);
+                    }
+
+                }
+                break;
+            case KERISTRASZA_ACTION_ENRAGE:
+                if (m_creature->GetHealthPercent() < 25.0f)
+                {
+                    if (DoCastSpellIfCan(m_creature, SPELL_ENRAGE) == CAST_OK)
+                    {
+                        DoScriptText(SAY_ENRAGE, m_creature);
+                        SetActionReadyStatus(action, false);
+                    }
+                }
+                break;
+        }
     }
 };
 
-// 48095 - Intense Cold
-struct IntenseColdAura : public AuraScript
+/*######
+## spell_intense_cold_aura - 48095
+######*/
+
+struct spell_intense_cold_aura : public AuraScript
 {
     void OnApply(Aura* aura, bool apply) const override
     {
@@ -131,5 +196,5 @@ void AddSC_boss_keristrasza()
     pNewScript->GetAI = &GetNewAIInstance<boss_keristraszaAI>;
     pNewScript->RegisterSelf();
 
-    RegisterSpellScript<IntenseColdAura>("spell_intense_cold_aura");
+    RegisterSpellScript<spell_intense_cold_aura>("spell_intense_cold_aura");
 }

@@ -23,18 +23,18 @@ EndScriptData */
 
 #include "AI/ScriptDevAI/include/sc_common.h"
 #include "nexus.h"
-#include "AI/ScriptDevAI/base/BossAI.h"
+#include "AI/ScriptDevAI/base/CombatAI.h"
 #include "Spells/Scripts/SpellScript.h"
 
 enum
 {
-    SAY_AGGRO                          = 29599,
-    SAY_RIFT                           = 29601,
-    SAY_SHIELD                         = 29602,
-    SAY_KILL                           = 29603,
-    SAY_DEATH                          = 23157,
-    EMOTE_OPEN_RIFT                    = 27362,
-    EMOTE_SHIELD                       = 27363,
+    SAY_AGGRO                          = -1576006,
+    SAY_RIFT                           = -1576007,
+    SAY_SHIELD                         = -1576008,
+    SAY_KILL                           = -1576009,
+    SAY_DEATH                          = -1576010,
+    EMOTE_OPEN_RIFT                    = -1576021,
+    EMOTE_SHIELD                       = -1576022,
 
     // Anomalus
     SPELL_CREATE_RIFT                  = 47743,                 // spawn creature 26918
@@ -49,8 +49,9 @@ enum
 
 enum AnomalusActions
 {
-    ANOMALUS_ACTION_CREATE_RIFT,
     ANOMALUS_ACTION_CHAOTIC_RIFT,
+    ANOMALUS_ACTION_SPARK,
+    ANOMALUS_ACTION_CREATE_RIFT,
     ANOMALUS_ACTION_RESUME_COMBAT,
     ANOMALUS_ACTION_MAX,
 };
@@ -59,17 +60,16 @@ enum AnomalusActions
 ## boss_anomalus
 ######*/
 
-struct boss_anomalusAI : public BossAI
+struct boss_anomalusAI : public CombatAI
 {
-    boss_anomalusAI(Creature* creature) : BossAI(creature, ANOMALUS_ACTION_MAX), m_instance(static_cast<instance_nexus*>(creature->GetInstanceData())), m_isRegularMode(creature->GetMap()->IsRegularDifficulty())
+    boss_anomalusAI(Creature* creature) : CombatAI(creature, ANOMALUS_ACTION_MAX), m_instance(static_cast<instance_nexus*>(creature->GetInstanceData()))
     {
-        AddTimerlessCombatAction(ANOMALUS_ACTION_CREATE_RIFT, true);
+        AddCombatAction(ANOMALUS_ACTION_SPARK, 10000u);
+        AddCombatAction(ANOMALUS_ACTION_CREATE_RIFT, 15000u);
         AddCombatAction(ANOMALUS_ACTION_RESUME_COMBAT, true);
         AddTimerlessCombatAction(ANOMALUS_ACTION_CHAOTIC_RIFT, true);
-        SetDataType(TYPE_ANOMALUS);
-        AddOnAggroText(SAY_AGGRO);
-        AddOnDeathText(SAY_DEATH);
-        AddOnKillText(SAY_KILL);
+
+        m_isRegularMode = creature->GetMap()->IsRegularDifficulty();
     }
 
     instance_nexus* m_instance;
@@ -84,9 +84,33 @@ struct boss_anomalusAI : public BossAI
         m_uiChaoticRiftCount = 0;
     }
 
-    void JustSummoned(Creature* summoned) override
+    void Aggro(Unit* who) override
     {
-        if (summoned->GetEntry() == NPC_CHAOTIC_RIFT)
+        DoScriptText(SAY_AGGRO, m_creature);
+
+        if (m_instance)
+            m_instance->SetData(TYPE_ANOMALUS, IN_PROGRESS);
+    }
+
+    void JustDied(Unit* killer) override
+    {
+        DoScriptText(SAY_DEATH, m_creature);
+
+        if (m_instance)
+            m_instance->SetData(TYPE_ANOMALUS, DONE);
+    }
+
+    void KilledUnit(Unit* victim) override
+    {
+        CombatAI::KilledUnit(victim);
+
+        if (urand(0, 1))
+            DoScriptText(SAY_KILL, m_creature);
+    }
+
+    void JustSummoned(Creature* pSummoned) override
+    {
+        if (pSummoned->GetEntry() == NPC_CHAOTIC_RIFT)
         {
             ++m_uiChaoticRiftCount;
 
@@ -94,9 +118,9 @@ struct boss_anomalusAI : public BossAI
         }
     }
 
-    void SummonedCreatureJustDied(Creature* summoned) override
+    void SummonedCreatureJustDied(Creature* pSummoned) override
     {
-        if (summoned->GetEntry() == NPC_CHAOTIC_RIFT)
+        if (pSummoned->GetEntry() == NPC_CHAOTIC_RIFT)
         {
             --m_uiChaoticRiftCount;
 
@@ -119,6 +143,9 @@ struct boss_anomalusAI : public BossAI
     // Method to resume combat
     void DoResumeCombat()
     {
+        ResetCombatAction(ANOMALUS_ACTION_SPARK, 10000);
+        ResetCombatAction(ANOMALUS_ACTION_CREATE_RIFT, 15000);
+
         // inform remaining rifts to resume normal auras
         SendAIEventAround(AI_EVENT_CUSTOM_EVENTAI_A, m_creature, 0, 40.0f);
     }
@@ -143,18 +170,24 @@ struct boss_anomalusAI : public BossAI
 
                         SetActionReadyStatus(action, false);
                         ResetCombatAction(ANOMALUS_ACTION_RESUME_COMBAT, 45000);
+                        DisableCombatAction(ANOMALUS_ACTION_SPARK);
+                        DisableCombatAction(ANOMALUS_ACTION_CREATE_RIFT);
                     }
                 }
                 break;
-            case ANOMALUS_ACTION_CREATE_RIFT:
-                if (m_creature->GetHealthPercent() < 50.0f) // prenerf also 75 and 25%
+            case ANOMALUS_ACTION_SPARK:
+                if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
                 {
-                    if (DoCastSpellIfCan(nullptr, SPELL_CREATE_RIFT) == CAST_OK)
-                    {
-                        DoScriptText(SAY_RIFT, m_creature);
-                        DoScriptText(EMOTE_OPEN_RIFT, m_creature);
-                        ResetCombatAction(action, 25000);
-                    }
+                    if (DoCastSpellIfCan(pTarget, m_isRegularMode ? SPELL_SPARK : SPELL_SPARK_H) == CAST_OK)
+                        ResetCombatAction(action, urand(8000, 10000));
+                }
+                break;
+            case ANOMALUS_ACTION_CREATE_RIFT:
+                if (DoCastSpellIfCan(m_creature, SPELL_CREATE_RIFT) == CAST_OK)
+                {
+                    DoScriptText(SAY_RIFT, m_creature);
+                    DoScriptText(EMOTE_OPEN_RIFT, m_creature);
+                    ResetCombatAction(action, 25000);
                 }
                 break;
             case ANOMALUS_ACTION_RESUME_COMBAT:
@@ -165,8 +198,11 @@ struct boss_anomalusAI : public BossAI
     }
 };
 
-// 47747 - Charge Rifts
-struct ChargeRifts : public SpellScript
+/*######
+## spell_charge_rifts - 47747
+######*/
+
+struct spell_charge_rifts : public SpellScript
 {
     void OnRadiusCalculate(Spell* spell, SpellEffectIndex /*effIdx*/, bool /*targetB*/, float& radius) const override
     {
@@ -187,8 +223,8 @@ struct ChargeRifts : public SpellScript
         target->RemoveAurasDueToSpell(47732);
 
         // cast charged damage and summon auras
-        target->CastSpell(nullptr, 47733, TRIGGERED_OLD_TRIGGERED);
-        target->CastSpell(nullptr, 47742, TRIGGERED_OLD_TRIGGERED);
+        target->CastSpell(target, 47733, TRIGGERED_OLD_TRIGGERED);
+        target->CastSpell(target, 47742, TRIGGERED_OLD_TRIGGERED);
     }
 };
 
@@ -199,5 +235,5 @@ void AddSC_boss_anomalus()
     pNewScript->GetAI = &GetNewAIInstance<boss_anomalusAI>;
     pNewScript->RegisterSelf();
 
-    RegisterSpellScript<ChargeRifts>("spell_charge_rifts");
+    RegisterSpellScript<spell_charge_rifts>("spell_charge_rifts");
 }

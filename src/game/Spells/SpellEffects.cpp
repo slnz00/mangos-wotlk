@@ -3863,7 +3863,7 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
         }
         case SPELLFAMILY_PRIEST:
         {
-            // Penance
+            // Penance, Minor Penance
             if (m_spellInfo->SpellFamilyFlags & uint64(0x0080000000000000))
             {
                 if (!unitTarget)
@@ -3877,6 +3877,26 @@ void Spell::EffectDummy(SpellEffectIndex eff_idx)
                     case 53005: hurt = 53001; heal = 52986; break;
                     case 53006: hurt = 53002; heal = 52987; break;
                     case 53007: hurt = 53003; heal = 52988; break;
+                    case 91010:
+                        hurt = 91013;
+                        heal = 91014;
+                        break;
+                    case 91020:
+                        hurt = 91023;
+                        heal = 91024;
+                        break;
+                    case 91030:
+                        hurt = 91033;
+                        heal = 91034;
+                        break;
+                    case 91040:
+                        hurt = 91043;
+                        heal = 91044;
+                        break;
+                    case 91050:
+                        hurt = 91053;
+                        heal = 91054;
+                        break;
                     default:
                         sLog.outError("Spell::EffectDummy: Spell %u Penance need set correct heal/damage spell", m_spellInfo->Id);
                         return;

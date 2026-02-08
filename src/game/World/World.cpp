@@ -977,6 +977,27 @@ void World::LoadConfigSettings(bool reload)
 
     setConfig(CONFIG_FLOAT_RATE_FISHING_CHANCE, "Rate.Fishing.Chance", 1.0f);
 
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_DISTANCE, "Priest.Atonement.Distance", 40.0f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_0,  "Priest.Atonement.Multiplier.Level0",  1.4f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_10, "Priest.Atonement.Multiplier.Level10", 1.6f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_20, "Priest.Atonement.Multiplier.Level20", 1.5f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_30, "Priest.Atonement.Multiplier.Level30", 1.3f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_40, "Priest.Atonement.Multiplier.Level40", 1.4f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_50, "Priest.Atonement.Multiplier.Level50", 1.5f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_60, "Priest.Atonement.Multiplier.Level60", 1.6f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_70, "Priest.Atonement.Multiplier.Level70", 1.75f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_80, "Priest.Atonement.Multiplier.Level80", 2.1f);
+
+    atonementMulti[0] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_0);
+    atonementMulti[1] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_10);
+    atonementMulti[2] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_20);
+    atonementMulti[3] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_30);
+    atonementMulti[4] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_40);
+    atonementMulti[5] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_50);
+    atonementMulti[6] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_60);
+    atonementMulti[7] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_70);
+    atonementMulti[8] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_80);
+
     sLog.outString();
 }
 

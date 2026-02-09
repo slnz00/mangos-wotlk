@@ -865,6 +865,7 @@ class Spell
         void OnSummon(Creature* summon);
         uint32 GetPhaseMaskOverride(); // SUMMON_PROP_FLAG_IGNORE_SUMMONERS_PHASE - propid 1881
         // effect execution info access - only to be used in OnEffectExecute OnHit and OnAfterHit
+        SpellCastTargets GetAllTargets() { return m_targets; }
         Unit* GetUnitTarget() { return unitTarget; }
         Item* GetItemTarget() { return itemTarget; }
         GameObject* GetGOTarget() { return gameObjTarget; }

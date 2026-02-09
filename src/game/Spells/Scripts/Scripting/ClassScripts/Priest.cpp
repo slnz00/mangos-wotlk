@@ -588,7 +588,7 @@ struct LeapOfFaith : public SpellScript
             return SPELL_FAILED_TARGET_NOT_IN_PARTY;
         }
 
-        auto target = caster->GetLastTargetedUnit();
+        auto target = spell->GetAllTargets().getUnitTarget();
         auto group = caster->GetGroup();
         if (!group || !target || target == caster || !group->IsMember(target->GetObjectGuid()))
         {
@@ -612,7 +612,7 @@ struct LeapOfFaith : public SpellScript
             return;
         }
 
-        auto target = caster->GetLastTargetedUnit();
+        auto target = spell->GetAllTargets().getUnitTarget();
         if (!target)
         {
             return;

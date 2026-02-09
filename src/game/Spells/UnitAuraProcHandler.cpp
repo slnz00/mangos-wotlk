@@ -1837,6 +1837,13 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(ProcExecutionData& data)
                     basepoints[0] = int32(triggerAmount * damage / 100) / GetSpellAuraMaxTicks(triggered_spell_id);
                     break;
                 }
+                // Evangelism - Remove on heal:
+                case 91210: {
+                    RemoveAurasDueToSpell(91210);
+
+                    return SPELL_AURA_PROC_OK;
+                    break;
+                }
                 // Atonement
                 case 91300: {
                     auto caster = static_cast<Player*>(triggeredByAura->GetCaster());

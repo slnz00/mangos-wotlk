@@ -609,12 +609,13 @@ void MotionMaster::MoveKnockback(float x, float y, float z, float horizontalSpee
     Mutate(new EffectMovementGenerator(init, id));
 }
 
-void MotionMaster::MoveJump(float x, float y, float z, float horizontalSpeed, float max_height, uint32 id/*= EVENT_JUMP*/)
+void MotionMaster::MoveJump(float x, float y, float z, float horizontalSpeed, float max_height, uint32 id/*= EVENT_JUMP*/, bool orientationFixed)
 {
     Movement::MoveSplineInit init(*m_owner);
     init.MoveTo(x, y, z);
     init.SetParabolic(max_height, 0);
     init.SetVelocity(horizontalSpeed);
+    init.SetOrientationFixed(orientationFixed);
     Mutate(new EffectMovementGenerator(init, id));
 }
 
@@ -625,12 +626,13 @@ void MotionMaster::MoveJumpFacingVerticalSpeed(Position pos, float horizontalSpe
     MoveJumpFacing(pos, horizontalSpeed, verticalSpeed, id, guid, relayId);
 }
 
-void MotionMaster::MoveJumpFacing(Position pos, float horizontalSpeed, float maxHeight, uint32 id, ObjectGuid guid, uint32 relayId)
+void MotionMaster::MoveJumpFacing(Position pos, float horizontalSpeed, float maxHeight, uint32 id, ObjectGuid guid, uint32 relayId, bool orientationFixed)
 {
     Movement::MoveSplineInit init(*m_owner);
     init.MoveTo(pos.x, pos.y, pos.z);
     init.SetParabolic(maxHeight, 0);
     init.SetVelocity(horizontalSpeed);
+    init.SetOrientationFixed(orientationFixed);
     if (pos.o != 100.f)
         init.SetFacing(pos.o);
     Mutate(new EffectMovementGenerator(init, id, false, guid, relayId));

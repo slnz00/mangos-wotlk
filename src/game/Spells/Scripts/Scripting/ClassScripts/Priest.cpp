@@ -628,6 +628,33 @@ struct LeapOfFaith : public SpellScript
     }
 };
 
+// 91400 - Archangel
+struct Archangel : public SpellScript
+{
+    void OnCast(Spell* spell) const override
+    {
+        auto caster = static_cast<Player*>(spell->GetCaster());
+        if (!caster)
+        {
+            return;
+        }
+
+        auto restoreManaPct = spell->m_spellInfo->EffectBasePoints[0] + 1;
+        auto evangelismStack = caster->GetAuraCount(91210);
+        caster->RemoveAurasDueToSpell(91210);
+            
+        if (!caster->HasMana() || evangelismStack < 1)
+        {
+            return;
+        }
+
+        auto gain = caster->GetMaxPower(POWER_MANA) * ((restoreManaPct * evangelismStack) / 100.0f);
+
+        caster->ModifyPower(POWER_MANA, gain);
+    }
+};
+
+
 void LoadPriestScripts()
 {
     RegisterSpellScript<PowerInfusion>("spell_power_infusion");
@@ -658,5 +685,6 @@ void LoadPriestScripts()
     RegisterSpellScript<ShadowfiendDeath>("spell_shadowfiend_death");
     RegisterSpellScript<GlyphOfShadowWordPain>("spell_glyph_of_shadow_word_pain");
     RegisterSpellScript<GlyphOfDispelMagic>("spell_glyph_of_dispel_magic");
+    RegisterSpellScript<Archangel>("spell_priest_archangel");
     RegisterSpellScript<LeapOfFaith>("spell_priest_leap_of_faith");
 }

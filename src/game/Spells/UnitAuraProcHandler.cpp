@@ -1883,7 +1883,7 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(ProcExecutionData& data)
                     for (auto slot = groupMembers.begin(); slot != groupMembers.end(); ++slot)
                     {
                         auto current = sObjectMgr.GetPlayer(slot->guid);
-                        auto map = current->GetMap();
+                        auto map = current ? current->GetMap() : nullptr;
 
                         if (!current || !map || map != pVictim->GetMap())
                         {

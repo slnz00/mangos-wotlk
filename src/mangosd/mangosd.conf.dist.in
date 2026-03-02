@@ -2088,6 +2088,18 @@ CharDelete.KeepDays = 30
 #    Creature.AutoScaling.DownScaleDelay
 #        Default: 5
 #
+#    Priest.Atonement.Distance
+#        Default: 40.0
+#    Priest.Atonement.Multiplier.Level0
+#    Priest.Atonement.Multiplier.Level10
+#    Priest.Atonement.Multiplier.Level20
+#    Priest.Atonement.Multiplier.Level30
+#    Priest.Atonement.Multiplier.Level40
+#    Priest.Atonement.Multiplier.Level50
+#    Priest.Atonement.Multiplier.Level60
+#    Priest.Atonement.Multiplier.Level70
+#    Priest.Atonement.Multiplier.Level80
+#
 #    Debug.Creature.AutoScaling.PlayerName
 #
 ###################################################################################################################

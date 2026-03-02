@@ -577,6 +577,84 @@ struct DispelMagicPriest : public SpellScript
     }
 };
 
+// 91500 - Leap of Faith
+struct LeapOfFaith : public SpellScript
+{
+    SpellCastResult OnCheckCast(Spell* spell, bool strict) const override
+    {
+        auto caster = static_cast<Player*>(spell->GetCaster());
+        if (!caster)
+        {
+            return SPELL_FAILED_TARGET_NOT_IN_PARTY;
+        }
+
+        auto target = spell->GetAllTargets().getUnitTarget();
+        auto group = caster->GetGroup();
+        if (!group || !target || target == caster || !group->IsMember(target->GetObjectGuid()))
+        {
+            return SPELL_FAILED_TARGET_NOT_IN_PARTY;
+        }
+
+        auto inLos = target->IsWithinLOSInMap(caster);
+        if (!inLos)
+        {
+            return SPELL_FAILED_OUT_OF_RANGE;
+        }
+
+        return SPELL_CAST_OK;
+    }
+
+    void OnCast(Spell* spell) const override
+    {
+        auto caster = static_cast<Player*>(spell->GetCaster());
+        if (!caster)
+        {
+            return;
+        }
+
+        auto target = spell->GetAllTargets().getUnitTarget();
+        if (!target)
+        {
+            return;
+        }
+        
+        float x, y, z;
+        caster->GetPosition(x, y, z);
+
+        float speed = 80.0f; // Speed of the pull
+        float height = 0.0f; // Height of the arc (Jump height)
+
+        (new MotionMaster(target))->MoveJumpFacing(Position(x, y, z, target->GetOrientation()), speed, height, EVENT_JUMP, ObjectGuid(), 0, true);
+    }
+};
+
+// 91400 - Archangel
+struct Archangel : public SpellScript
+{
+    void OnCast(Spell* spell) const override
+    {
+        auto caster = static_cast<Player*>(spell->GetCaster());
+        if (!caster)
+        {
+            return;
+        }
+
+        auto restoreManaPct = spell->m_spellInfo->EffectBasePoints[0] + 1;
+        auto evangelismStack = caster->GetAuraCount(91210);
+        caster->RemoveAurasDueToSpell(91210);
+            
+        if (!caster->HasMana() || evangelismStack < 1)
+        {
+            return;
+        }
+
+        auto gain = caster->GetMaxPower(POWER_MANA) * ((restoreManaPct * evangelismStack) / 100.0f);
+
+        caster->ModifyPower(POWER_MANA, gain);
+    }
+};
+
+
 void LoadPriestScripts()
 {
     RegisterSpellScript<PowerInfusion>("spell_power_infusion");
@@ -607,4 +685,6 @@ void LoadPriestScripts()
     RegisterSpellScript<ShadowfiendDeath>("spell_shadowfiend_death");
     RegisterSpellScript<GlyphOfShadowWordPain>("spell_glyph_of_shadow_word_pain");
     RegisterSpellScript<GlyphOfDispelMagic>("spell_glyph_of_dispel_magic");
+    RegisterSpellScript<Archangel>("spell_priest_archangel");
+    RegisterSpellScript<LeapOfFaith>("spell_priest_leap_of_faith");
 }

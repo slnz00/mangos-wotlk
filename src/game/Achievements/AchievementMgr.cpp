@@ -526,7 +526,7 @@ void AchievementMgr::StartAchievementCriteria(CriteriaStartEvent startEvent, uin
         progress->changed = true;
         progress->counter = 0;
 
-        TimePoint now = GetPlayer()->GetMap()->GetCurrentClockTime();
+        TimePoint now = sWorld.GetCurrentClockTime();
 
         // Start with given startTime or now
         progress->startDate = now;
@@ -772,7 +772,7 @@ void AchievementMgr::SendCriteriaUpdate(uint32 id, CriteriaProgress const* progr
     WorldPacket data(SMSG_CRITERIA_UPDATE, 8 + 4 + 8);
     data << uint32(id);
 
-    TimePoint now = GetPlayer()->GetMap()->GetCurrentClockTime();
+    TimePoint now = sWorld.GetCurrentClockTime();
     // the counter is packed like a packed Guid
     data.appendPackGUID(progress->counter);
 
@@ -857,7 +857,7 @@ void AchievementMgr::StartTimedAchievementCriteria(CriteriaTimedEvent timedEvent
         progress->changed = true;
         progress->counter = 0;
 
-        TimePoint now = GetPlayer()->GetMap()->GetCurrentClockTime();
+        TimePoint now = sWorld.GetCurrentClockTime();
 
         // Start with given startTime or now
         progress->updateDate = now;
@@ -878,7 +878,7 @@ void AchievementMgr::DoFailedTimedAchievementCriterias()
     if (m_criteriaFailTimes.empty())
         return;
 
-    TimePoint now = GetPlayer()->GetMap()->GetCurrentClockTime();
+    TimePoint now = sWorld.GetCurrentClockTime();
     for (AchievementCriteriaFailTimeMap::iterator iter = m_criteriaFailTimes.begin(); iter != m_criteriaFailTimes.end();)
     {
         if (iter->second > now)
@@ -2187,8 +2187,8 @@ void AchievementMgr::SetCriteriaProgress(AchievementCriteriaEntry const* criteri
 
         progress = &m_criteriaProgress[criteria->ID];
 
-        progress->startDate = GetPlayer()->GetMap()->GetCurrentClockTime();
-        progress->updateDate = GetPlayer()->GetMap()->GetCurrentClockTime();
+        progress->startDate = sWorld.GetCurrentClockTime();
+        progress->updateDate = sWorld.GetCurrentClockTime();
         progress->criteriaFailed = false;
 
         // timed criterias are added to fail-timer map, and send the starting with counter=0
@@ -2287,7 +2287,7 @@ void AchievementMgr::CompletedAchievement(AchievementEntry const* achievement)
         return;
 
     CompletedAchievementData& ca =  m_completedAchievements[achievement->ID];
-    ca.updateDate = GetPlayer()->GetMap()->GetCurrentClockTime();
+    ca.updateDate = sWorld.GetCurrentClockTime();
     ca.changed = true;
 
     SendAchievementEarned(achievement, ca.updateDate);
@@ -2420,7 +2420,7 @@ void AchievementMgr::BuildAllDataPacket(WorldPacket& data)
     }
     data << int32(-1); // loop terminator
 
-    TimePoint now = GetPlayer()->GetMap()->GetCurrentClockTime();
+    TimePoint now = sWorld.GetCurrentClockTime();
     for (auto& itr : m_criteriaProgress)
     {
         data << uint32(itr.first);

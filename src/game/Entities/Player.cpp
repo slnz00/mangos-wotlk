@@ -710,6 +710,8 @@ Player::Player(WorldSession* session): Unit(), m_taxiTracker(*this), m_mover(thi
     m_pendingMountAuraFlying = false;
     m_pendingDismount = false;
     m_pendingTaxi = false;
+
+    m_debugTargetAutoScaling = false;
 }
 
 Player::~Player()
@@ -1723,6 +1725,13 @@ void Player::Update(const uint32 diff)
 
     if (IsHasDelayedTeleport() && !m_semaphoreTeleport_Near)
         TeleportTo(m_teleport_dest, m_teleport_options);
+
+    Unit* target = GetTarget();
+
+    if (m_debugTargetAutoScaling && target && target->IsCreature())
+    {
+        ((Creature*)target)->PrintAutoscaleDebugInfo(this);
+    }
 
 #ifdef BUILD_DEPRECATED_PLAYERBOT
     if (m_playerbotAI)
@@ -6908,6 +6917,18 @@ void Player::SendDirectMessage(WorldPacket const& data) const
     GetSession()->SendPacket(data);
 }
 
+Unit* Player::GetLastTargetedUnit()
+{
+    auto map = this->GetMap();
+
+    if (!map)
+    {
+        return nullptr;
+    }
+
+    return map->GetUnit(this->GetLastTargetGuid());
+}
+
 void Player::SendCinematicStart(uint32 CinematicSequenceId)
 {
     WorldPacket data(SMSG_TRIGGER_CINEMATIC, 4);
@@ -7018,7 +7039,7 @@ void Player::CheckAreaExploreAndOutdoor()
                 uint32 XP;
                 if (diff < -5)
                 {
-                    XP = uint32(sObjectMgr.GetBaseXP(GetLevel() + 5) * GetMap()->GetXPModRate(RateModType::EXPLORE));
+                    XP = uint32(sObjectMgr.GetBaseXP(GetLevel() + 5) * GetMap()->GetXPModRate(RateModType::EXPLORE, this));
                 }
                 else if (diff > 5)
                 {
@@ -7028,11 +7049,11 @@ void Player::CheckAreaExploreAndOutdoor()
                     else if (exploration_percent < 0)
                         exploration_percent = 0;
 
-                    XP = uint32(sObjectMgr.GetBaseXP(p->area_level) * exploration_percent / 100 * GetMap()->GetXPModRate(RateModType::EXPLORE));
+                    XP = uint32(sObjectMgr.GetBaseXP(p->area_level) * exploration_percent / 100 * GetMap()->GetXPModRate(RateModType::EXPLORE, this));
                 }
                 else
                 {
-                    XP = uint32(sObjectMgr.GetBaseXP(p->area_level) * GetMap()->GetXPModRate(RateModType::EXPLORE));
+                    XP = uint32(sObjectMgr.GetBaseXP(p->area_level) * GetMap()->GetXPModRate(RateModType::EXPLORE, this));
                 }
 
                 GiveXP(XP, nullptr);
@@ -14561,7 +14582,7 @@ void Player::RewardQuest(Quest const* pQuest, uint32 reward, Object* questGiver,
     bool rewarded = q_status.m_rewarded && !pQuest->IsDungeonFinderQuest();
 
     // Used for client inform but rewarded only in case not max level
-    uint32 xp = uint32(pQuest->GetXPReward(this) * GetMap()->GetXPModRate(RateModType::QUEST));
+    uint32 xp = uint32(pQuest->GetXPReward(this) * GetMap()->GetXPModRate(RateModType::QUEST, this));
 
     if (GetLevel() < GetMaxAttainableLevel())
     {
@@ -16968,6 +16989,14 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     m_achievementMgr.CheckAllAchievementCriteria();
 
     _LoadEquipmentSets(holder->GetResult(PLAYER_LOGIN_QUERY_LOADEQUIPMENTSETS));
+    
+    std::string cfgName = sConfig.GetStringDefault("Debug.Creature.AutoScaling.PlayerName", "");
+    std::string name = m_name;
+
+    if (normalizePlayerName(cfgName) && normalizePlayerName(name))
+    {
+        m_debugTargetAutoScaling = name == cfgName;
+    }
 
     return true;
 }

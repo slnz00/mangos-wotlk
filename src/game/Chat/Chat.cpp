@@ -581,6 +581,7 @@ ChatCommand* ChatHandler::getCommandTable()
         { "flag",           SEC_GAMEMASTER,     false, &ChatHandler::HandleNpcFlagCommand,             "", nullptr },
         { "follow",         SEC_GAMEMASTER,     false, &ChatHandler::HandleNpcFollowCommand,           "", nullptr },
         { "info",           SEC_ADMINISTRATOR,  false, &ChatHandler::HandleNpcInfoCommand,             "", nullptr },
+        { "macro",          SEC_ADMINISTRATOR,  false, &ChatHandler::HandleNpcMacroCommand,            "", nullptr },
         { "threat",         SEC_ADMINISTRATOR,  false, &ChatHandler::HandleNpcThreatCommand,           "", nullptr },
         { "move",           SEC_GAMEMASTER,     false, &ChatHandler::HandleNpcMoveCommand,             "", nullptr },
         { "playemote",      SEC_ADMINISTRATOR,  false, &ChatHandler::HandleNpcPlayEmoteCommand,        "", nullptr },
@@ -985,6 +986,9 @@ ChatCommand* ChatHandler::getCommandTable()
 
     static ChatCommand commandTable[] =
     {
+        { "tpout",          SEC_PLAYER,         true,  &ChatHandler::HandleTpCommand,                     "", nullptr              },
+        { "toraid",         SEC_PLAYER,         true,  &ChatHandler::HandleConvertToRaid,                 "", nullptr              },
+        { "come",           SEC_GAMEMASTER,     true,  &ChatHandler::HandleComeCommand,                   "", nullptr              },
         { "account",        SEC_PLAYER,         true,  nullptr,                                           "", accountCommandTable  },
         { "achievement",    SEC_ADMINISTRATOR,  true,  nullptr,                                           "", achievementCommandTable },
         { "anticheat",      SEC_GAMEMASTER,     true,  nullptr,                                           "", anticheatCommandTable},
@@ -1002,7 +1006,7 @@ ChatCommand* ChatHandler::getCommandTable()
 #endif
         { "cast",           SEC_ADMINISTRATOR,  false, nullptr,                                           "", castCommandTable     },
         { "character",      SEC_GAMEMASTER,     true,  nullptr,                                           "", characterCommandTable},
-        { "channel",        SEC_MODERATOR,      false, nullptr,                                        "", channelCommandTable  },
+        { "channel",        SEC_MODERATOR,      false, nullptr,                                           "", channelCommandTable  },
         { "debug",          SEC_MODERATOR,      true,  nullptr,                                           "", debugCommandTable    },
         { "event",          SEC_GAMEMASTER,     false, nullptr,                                           "", eventCommandTable    },
         { "gm",             SEC_PLAYER,         true,  nullptr,                                           "", gmCommandTable       },
@@ -1127,6 +1131,38 @@ ChatCommand* ChatHandler::getCommandTable()
     }
 
     return commandTable;
+}
+
+uint32 ChatHandler::GetGameObjecGuidFromArgs(char* args, bool popLastObject)
+{
+    Player* player = m_session->GetPlayer();
+
+    uint32 guid;
+
+    if (!player)
+    {
+        SendSysMessage("Internal error, player does not exist!");
+        return 0;
+    }
+
+    if (strcmp(args, "last") == 0 && !player->GameObjectsAdded.empty())
+    {
+        guid = player->GameObjectsAdded.front();
+
+        if (popLastObject)
+        {
+            player->GameObjectsAdded.pop_front();
+        }
+
+        return guid;
+    }
+    
+    if (!ExtractUint32KeyFromLink(&args, "Hgameobject", guid))
+    {
+        return 0;
+    }
+
+    return guid;
 }
 
 ChatHandler::ChatHandler(WorldSession* session) : m_session(session), sentErrorMessage(false)

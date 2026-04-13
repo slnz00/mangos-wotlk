@@ -993,9 +993,7 @@ bool ChatHandler::HandleGameObjectTargetCommand(char* args)
 bool ChatHandler::HandleGameObjectDeleteCommand(char* args)
 {
     // number or [name] Shift-click form |color|Hgameobject:go_guid|h[name]|h|r
-    uint32 dbGuid;
-    if (!ExtractUint32KeyFromLink(&args, "Hgameobject", dbGuid))
-        return false;
+    uint32 dbGuid = GetGameObjecGuidFromArgs(args, true);
 
     if (!dbGuid)
         return false;
@@ -1213,6 +1211,9 @@ bool ChatHandler::HandleGameObjectAddCommand(char* args)
     sObjectMgr.AddGameobjectToGrid(db_lowGUID, sObjectMgr.GetGOData(db_lowGUID));
 
     PSendSysMessage(LANG_GAMEOBJECT_ADD, id, gInfo->name, db_lowGUID, x, y, z);
+
+    plr->GameObjectsAdded.emplace_front(db_lowGUID);
+
     return true;
 }
 
@@ -5668,4 +5669,40 @@ bool ChatHandler::HandleLootStatsCommand(char* args)
 bool ChatHandler::HandleLootFullStatsCommand(char* args)
 {
     return LootStatsHelper(args, true);
+}
+
+bool ChatHandler::HandleComeCommand(char* args)
+{
+    auto player = m_session->GetPlayer();
+    auto map = player ? player->GetMap() : nullptr;
+
+    if (!map)
+    {
+        return false;
+    }
+
+    std::string targetName = args;
+
+    if (!normalizePlayerName(targetName))
+    {
+        PSendSysMessage("Player does not exist.");
+        return true;
+    }
+
+    Player* target = sObjectMgr.GetPlayer(targetName.c_str());
+    
+    if (!target)
+    {
+        PSendSysMessage("Player does not exist.");
+        return true;
+    }
+
+    // Position of the player running the command:
+    auto mapid = player->GetMapId();
+    auto x = player->GetPositionX();
+    auto y = player->GetPositionY();
+    auto z = player->GetPositionZ();
+
+    // Teleports the target to current player's location:
+    return HandleGoHelper(target, mapid, x, y, &z);
 }

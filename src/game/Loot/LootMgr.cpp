@@ -136,6 +136,9 @@ void LootStore::LoadLootTable()
     //                                                 0      1     2                    3        4              5         6
     auto queryResult = WorldDatabase.PQuery("SELECT entry, item, ChanceOrQuestChance, groupid, mincountOrRef, maxcount, condition_id FROM %s", GetName());
 
+    float questItemMultiMin = sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_AMOUNT_ITEM_QUEST_MIN);
+    float questItemMultiMax = sWorld.getConfig(CONFIG_FLOAT_RATE_DROP_AMOUNT_ITEM_QUEST_MAX);
+
     if (queryResult)
     {
         BarGoLink bar(queryResult->GetRowCount());
@@ -178,6 +181,15 @@ void LootStore::LoadLootTable()
             // Validity checks
             if (!IsValidItemTemplate(entry, item, group, mincountOrRef, chanceOrQuestChance, maxcount))
                 continue;
+
+            bool isQuestItem = chanceOrQuestChance < 0.0f;
+            bool isGuaranteed = chanceOrQuestChance == -100.0f;
+
+            if (isQuestItem && !isGuaranteed && mincountOrRef > 0 && maxcount > 0)
+            {
+                mincountOrRef *= questItemMultiMin;
+                maxcount *= questItemMultiMax;
+            }
 
             // Add the item to the loot store
             ++validItems[entry];
@@ -519,8 +531,14 @@ LootSlotType LootItem::GetSlotTypeForSharedLoot(Player const* player, Loot const
         switch (loot->m_lootMethod)
         {
             case NOT_GROUP_TYPE_LOOT:
-            case FREE_FOR_ALL:
+            case FREE_FOR_ALL: {
+                if (isBlocked)
+                {
+                    return LOOT_SLOT_VIEW;
+                }
+
                 return LOOT_SLOT_OWNER;
+            }
 
             default:
                 if (!isUnderThreshold && lootItemType == LOOTITEM_TYPE_CONDITIONNAL && loot->m_lootMethod == MASTER_LOOT)
@@ -542,7 +560,14 @@ LootSlotType LootItem::GetSlotTypeForSharedLoot(Player const* player, Loot const
     switch (loot->m_lootMethod)
     {
         case FREE_FOR_ALL:
+        {
+            if (isBlocked)
+            {
+                return LOOT_SLOT_VIEW;
+            }
+
             return LOOT_SLOT_OWNER;
+        }
         case GROUP_LOOT:
         case NEED_BEFORE_GREED:
         {
@@ -591,7 +616,14 @@ LootSlotType LootItem::GetSlotTypeForSharedLoot(Player const* player, Loot const
             return MAX_LOOT_SLOT_TYPE;
         }
         case NOT_GROUP_TYPE_LOOT:
+        {
+            if (isBlocked)
+            {
+                return LOOT_SLOT_VIEW;
+            }
+            
             return LOOT_SLOT_OWNER;
+        }
         default:
             return MAX_LOOT_SLOT_TYPE;
     }
@@ -1022,7 +1054,7 @@ void Loot::AddItem(uint32 itemid, uint32 count, uint32 randomSuffix, int32 rando
 }
 
 // Calls processor of corresponding LootTemplate (which handles everything including references)
-bool Loot::FillLoot(uint32 loot_id, LootStore const& store, Player* lootOwner, bool /*personal*/, bool noEmptyError)
+bool Loot::FillLoot(uint32 loot_id, LootStore const& store, Player* lootOwner, bool /*personal*/, bool noEmptyError, Creature* creature)
 {
     // Must be provided
     if (!lootOwner)
@@ -1039,7 +1071,13 @@ bool Loot::FillLoot(uint32 loot_id, LootStore const& store, Player* lootOwner, b
 
     m_lootItems.reserve(MAX_NR_LOOT_ITEMS);
 
-    tab->Process(*this, lootOwner, store.IsRatesAllowed()); // Processing is done there, callback via Loot::AddItem()
+    tab->Process(*this, lootOwner, store.IsRatesAllowed(), nullptr, creature, false); // Processing is done there, callback via Loot::AddItem()
+
+    uint32 minItemCount = LootTemplate::GetMinDropCount(creature);
+
+    for (int i = 0; i < 10 && GetLootCount() < minItemCount; i++) {
+        tab->Process(*this, lootOwner, store.IsRatesAllowed(), nullptr, creature, true);
+    }
 
     // fill the loot owners right here so its impossible from this point to change loot result
     Player* masterLooter = nullptr;
@@ -1066,6 +1104,8 @@ bool Loot::FillLoot(uint32 loot_id, LootStore const& store, Player* lootOwner, b
         }
     }
 
+    bool rollInFreeForAll = sWorld.getConfig(CONFIG_BOOL_GROUP_ROLL_IN_FFA) && m_ownerSet.size() > 1;
+
     // check if item have to be rolled
     for (auto lootItem : m_lootItems)
     {
@@ -1088,6 +1128,13 @@ bool Loot::FillLoot(uint32 loot_id, LootStore const& store, Player* lootOwner, b
                 case NEED_BEFORE_GREED:
                 {
                     lootItem->isBlocked = true;
+                    break;
+                }
+
+                case NOT_GROUP_TYPE_LOOT:
+                {
+                    if (rollInFreeForAll)
+                        lootItem->isBlocked = true;
                     break;
                 }
 
@@ -1585,7 +1632,9 @@ void Loot::ShowContentTo(Player* plr)
             SetGroupLootRight(plr);
     }
 
-    if (m_lootMethod != NOT_GROUP_TYPE_LOOT && !m_isChecked)
+    bool rollInFreeForAll = sWorld.getConfig(CONFIG_BOOL_GROUP_ROLL_IN_FFA) && m_ownerSet.size() > 1;
+
+    if ((m_lootMethod != NOT_GROUP_TYPE_LOOT || rollInFreeForAll) && !m_isChecked)
         GroupCheck();
 
     WorldPacket data(SMSG_LOOT_RESPONSE);
@@ -1796,11 +1845,14 @@ Loot::Loot(Player* player, Creature* creature, LootType type) :
                         m_ownerSet.insert(threatEntry->getTarget()->GetObjectGuid());
             }
             else if (player)
+            {
                 // setting loot right
                 SetGroupLootRight(player);
+            }
+                
             m_clientLootType = CLIENT_LOOT_CORPSE;
 
-            if ((creatureInfo->LootId && FillLoot(creatureInfo->LootId, LootTemplates_Creature, player, false)) || creatureInfo->MaxLootGold > 0)
+            if ((creatureInfo->LootId && FillLoot(creatureInfo->LootId, LootTemplates_Creature, player, false, false, creature)) || creatureInfo->MaxLootGold > 0)
             {
                 GenerateMoneyLoot(creatureInfo->MinLootGold, creatureInfo->MaxLootGold);
                 // loot may be anyway empty (loot may be empty or contain items that no one have right to loot)
@@ -1943,7 +1995,7 @@ Loot::Loot(Player* player, GameObject* gameObject, LootType type, bool lootSnaps
                         m_isChest = true;
 
                     SetGroupLootRight(player);
-                    FillLoot(lootid, LootTemplates_Gameobject, player, false);
+                    FillLoot(lootid, LootTemplates_Gameobject, player, false, false);
                     GenerateMoneyLoot(gameObject->GetGOInfo()->MinMoneyLoot, gameObject->GetGOInfo()->MaxMoneyLoot);
 
                     if (m_lootType == LOOT_FISHINGHOLE)
@@ -2540,7 +2592,7 @@ void LootTemplate::LootGroup::AddEntry(LootStoreItem const& item)
 }
 
 // Rolls an item from the group, returns NULL if all miss their chances
-LootStoreItem const* LootTemplate::LootGroup::Roll(Loot const& loot, Player const* lootOwner) const
+LootStoreItem const* LootTemplate::LootGroup::Roll(Loot const& loot, Player const* lootOwner, float minDropChance = 0.0f) const
 {
     if (!ExplicitlyChanced.empty())                         // First explicitly chanced entries are checked
     {
@@ -2566,12 +2618,14 @@ LootStoreItem const* LootTemplate::LootGroup::Roll(Loot const& loot, Player cons
                 continue;
             }
 
-            if (lsi->chance >= 100.0f)
+            if (lsi->chance >= 100.0f) {
                 return lsi;
+            }
 
-            chance -= lsi->chance;
-            if (chance < 0)
+            chance -= lsi->chance >= minDropChance ? lsi->chance : minDropChance;
+            if (chance < 0) {
                 return lsi;
+            }
         }
     }
 
@@ -2638,15 +2692,27 @@ bool LootTemplate::LootGroup::HasQuestDropForPlayer(Player const* player) const
 }
 
 // Rolls an item from the group (if any takes its chance) and adds the item to the loot
-void LootTemplate::LootGroup::Process(Loot& loot, Player const* lootOwner, bool rate, LootStatsData* lootStatsData /*= nullptr*/) const
+void LootTemplate::LootGroup::Process(Loot& loot, Player const* lootOwner, bool rate, LootStatsData* lootStatsData /*= nullptr*/, Creature const* creature /*= nullptr*/, bool reroll /*= false*/) const
 {
+    uint32 minItemCount = LootTemplate::GetMinDropCount(creature);
+    uint32 maxItemCount = LootTemplate::GetMaxDropCount(creature);
+    bool minReached = loot.GetLootCount() > minItemCount && reroll;
+    bool maxReached = loot.GetLootCount() >= maxItemCount && maxItemCount > 0;
+
+    if (minReached || maxReached)
+    {
+        return;
+    }
+
     LootStats::GroupStats* groupStats = nullptr;
     if (lootStatsData)
     {
         groupStats = lootStatsData->stats->GetStatsForLootId(lootStatsData->groupIdOrItemId);
     }
 
-    LootStoreItem const* item = Roll(loot, lootOwner);
+    float minDropChance = LootTemplate::GetMinDropChance(creature);
+
+    LootStoreItem const* item = Roll(loot, lootOwner, minDropChance);
     if (item != nullptr)
     {
         if (item->mincountOrRef > 0)
@@ -2674,7 +2740,7 @@ void LootTemplate::LootGroup::Process(Loot& loot, Player const* lootOwner, bool 
                 }
 
                 for (uint32 loop = 0; loop < item->maxcount; ++loop)
-                    lRef->Process(loot, lootOwner, rate, nullptr);
+                    lRef->Process(loot, lootOwner, rate, nullptr, creature, reroll);
             }
         }
     }
@@ -2753,12 +2819,35 @@ void LootTemplate::AddEntry(LootStoreItem const& item)
 }
 
 // Rolls for every item in the template and adds the rolled items the the loot
-void LootTemplate::Process(Loot& loot, Player const* lootOwner, bool rate, LootStatsData* lootStatsData /*= nullptr*/) const
+void LootTemplate::Process(Loot& loot, Player const* lootOwner, bool rate, LootStatsData* lootStatsData /*= nullptr*/, Creature const* creature /*= nullptr*/, bool reroll /*= false*/) const
 {
+    uint32 minItemCount = LootTemplate::GetMinDropCount(creature);
+    uint32 maxItemCount = LootTemplate::GetMaxDropCount(creature);
+    bool minReached = loot.GetLootCount() > minItemCount && reroll;
+    bool maxReached = loot.GetLootCount() >= maxItemCount && maxItemCount > 0;
+
+    if (minReached || maxReached)
+    {
+        return;
+    }
+
     LootStats::GroupStats* groupStats = nullptr;
     if (lootStatsData)
     {
         groupStats = lootStatsData->stats->GetStatsForLootId(lootStatsData->groupIdOrItemId);
+    }
+
+    float minDropChance = LootTemplate::GetMinDropChance(creature);
+
+    // Now processing groups
+    for (auto& Group : Groups)
+    {
+        Group.Process(loot, lootOwner, rate, lootStatsData, creature, reroll);
+
+        if (roll_chance_f(GetDoubleDropChance(creature)))
+        {
+            Group.Process(loot, lootOwner, rate, lootStatsData, creature, reroll);
+        }
     }
 
     // Rolling non-grouped items
@@ -2789,20 +2878,109 @@ void LootTemplate::Process(Loot& loot, Player const* lootOwner, bool rate, LootS
             }
 
             for (uint32 loop = 0; loop < Entrie.maxcount; ++loop) // Ref multiplicator
-                Referenced->Process(loot, lootOwner, rate, lsData.get());
+                Referenced->Process(loot, lootOwner, rate, lsData.get(), creature, reroll);
         }
         else                                                // Plain entries (not a reference, not grouped)
         {
+            // Roll only groupped items during a reroll:
+            if (reroll)
+                continue;
+
             loot.AddItem(Entrie);                               // Chance is already checked, just add
             // only used if we want some stats
             if (groupStats)
                 groupStats->IncItemCount(0, std::make_pair(Entrie.itemid, Entrie.itemIndex));
         }
     }
+}
 
-    // Now processing groups
-    for (auto const& Group : Groups)
-        Group.Process(loot, lootOwner, rate, lootStatsData);
+float LootTemplate::GetMinDropChance(Creature const* creature)
+{
+    if (!creature)
+    {
+        return 0.0f;
+    }
+
+    if (creature->IsElite())
+    {
+        return sWorld.getConfig(CONFIG_FLOAT_DROP_MIN_CHANCE_ELITE);
+    }
+    if (creature->IsRare())
+    {
+        return sWorld.getConfig(CONFIG_FLOAT_DROP_MIN_CHANCE_RARE);
+    }
+    if (creature->IsBoss())
+    {
+        return sWorld.getConfig(CONFIG_FLOAT_DROP_MIN_CHANCE_BOSS);
+    }
+
+    return sWorld.getConfig(CONFIG_FLOAT_DROP_MIN_CHANCE_NORMAL);
+}
+
+uint32 LootTemplate::GetMinDropCount(Creature const* creature)
+{
+    if (!creature)
+    {
+        return 0;
+    }
+    if (creature->IsElite())
+    {
+        return sWorld.getConfig(CONFIG_UINT32_DROP_MIN_ITEMS_ELITE);
+    }
+    if (creature->IsRare())
+    {
+        return sWorld.getConfig(CONFIG_UINT32_DROP_MIN_ITEMS_RARE);
+    }
+    if (creature->IsBoss())
+    {
+        return sWorld.getConfig(CONFIG_UINT32_DROP_MIN_ITEMS_BOSS);
+    }
+
+    return sWorld.getConfig(CONFIG_UINT32_DROP_MIN_ITEMS_NORMAL);
+}
+
+uint32 LootTemplate::GetMaxDropCount(Creature const* creature)
+{
+    if (!creature)
+    {
+        return 0;
+    }
+    if (creature->IsElite())
+    {
+        return sWorld.getConfig(CONFIG_UINT32_DROP_MAX_ITEMS_ELITE);
+    }
+    if (creature->IsRare())
+    {
+        return sWorld.getConfig(CONFIG_UINT32_DROP_MAX_ITEMS_RARE);
+    }
+    if (creature->IsBoss())
+    {
+        return sWorld.getConfig(CONFIG_UINT32_DROP_MAX_ITEMS_BOSS);
+    }
+
+    return sWorld.getConfig(CONFIG_UINT32_DROP_MAX_ITEMS_NORMAL);
+}
+
+float LootTemplate::GetDoubleDropChance(Creature const* creature)
+{
+    if (!creature)
+    {
+        return 0.0f;
+    }
+    if (creature->IsElite())
+    {
+        return sWorld.getConfig(CONFIG_FLOAT_DOUBLE_DROP_CHANCE_ELITE);
+    }
+    if (creature->IsRare())
+    {
+        return sWorld.getConfig(CONFIG_FLOAT_DOUBLE_DROP_CHANCE_RARE);
+    }
+    if (creature->IsBoss())
+    {
+        return sWorld.getConfig(CONFIG_FLOAT_DOUBLE_DROP_CHANCE_BOSS);
+    }
+
+    return sWorld.getConfig(CONFIG_FLOAT_DOUBLE_DROP_CHANCE_NORMAL);
 }
 
 // True if template includes at least 1 quest drop entry

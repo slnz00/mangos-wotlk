@@ -2016,6 +2016,94 @@ CharDelete.KeepDays = 30
 #
 ###################################################################################################################
 
+###################################################################################################################
+# CUSTOM CONFIGURATION:
+#
+#    Creature.Scale.Normal.Damage
+#    Creature.Scale.Normal.Health
+#    Creature.Scale.Instance.Damage
+#    Creature.Scale.Instance.Health
+#        Fixed scale for creatures health and damage.
+#        Default: 1.0
+#
+#    Creature.DoubleDrop.Chance.Normal
+#    Creature.DoubleDrop.Chance.Elite
+#    Creature.DoubleDrop.Chance.Boss
+#    Creature.DoubleDrop.Chance.Rare
+#        Default: 0.0
+#
+#    Creature.Drop.MinChance.Normal
+#    Creature.Drop.MinChance.Elite
+#    Creature.Drop.MinChance.Boss
+#    Creature.Drop.MinChance.Rare
+#        Default: 0.0
+#
+#    Creature.Drop.MinItems.Normal
+#    Creature.Drop.MinItems.Elite
+#    Creature.Drop.MinItems.Boss
+#    Creature.Drop.MinItems.Rare
+#        Default: 0
+#
+#    Creature.Drop.MaxItems.Normal
+#    Creature.Drop.MaxItems.Elite
+#    Creature.Drop.MaxItems.Boss
+#    Creature.Drop.MaxItems.Rare
+#        Default: 0
+#
+#    Rate.DropAmount.Item.Quest.Min
+#    Rate.DropAmount.Item.Quest.Max
+#        Default: 1.0
+#
+#    Rate.Fishing.Chance
+#        Default: 1.0
+#
+#    Group.Loot.RollInFreeForAll
+#        Default: 0
+#
+#    XP.AutoScaling
+#        Default: 0
+#    XP.AutoScaling.Factor.Kill
+#    XP.AutoScaling.Factor.Quest
+#        Default: 0.07
+#
+#    Creature.AutoScaling.World
+#        Default: 0
+#    Creature.AutoScaling.Instance
+#        Default: 0
+#    Creature.AutoScaling.PlayersThreshold
+#        Default: 1
+#    Creature.AutoScaling.MinPlayerLevel
+#        Default: 0
+#    Creature.AutoScaling.Distance.Max
+#        Default: 45.0
+#    Creature.AutoScaling.Distance.Combat
+#        Default: 27.0
+#    Creature.AutoScaling.Rate.Normal.Health
+#    Creature.AutoScaling.Rate.Normal.Damage
+#    Creature.AutoScaling.Rate.Rare.Health
+#    Creature.AutoScaling.Rate.Rare.Damage
+#    Creature.AutoScaling.Rate.Instance.Health
+#    Creature.AutoScaling.Rate.Instance.Damage
+#        Default: 0.25
+#    Creature.AutoScaling.DownScaleDelay
+#        Default: 5
+#
+#    Priest.Atonement.Distance
+#        Default: 40.0
+#    Priest.Atonement.Multiplier.Level0
+#    Priest.Atonement.Multiplier.Level10
+#    Priest.Atonement.Multiplier.Level20
+#    Priest.Atonement.Multiplier.Level30
+#    Priest.Atonement.Multiplier.Level40
+#    Priest.Atonement.Multiplier.Level50
+#    Priest.Atonement.Multiplier.Level60
+#    Priest.Atonement.Multiplier.Level70
+#    Priest.Atonement.Multiplier.Level80
+#
+#    Debug.Creature.AutoScaling.PlayerName
+#
+###################################################################################################################
+
 Metric.Enable = 0
 Metric.Address = "127.0.0.1"
 Metric.Port = 8086

@@ -196,6 +196,8 @@ class ChatHandler
         void CheckIntegrity(ChatCommand* table, ChatCommand* parentCommand) const;
         ChatCommand* getCommandTable();
 
+        uint32 GetGameObjecGuidFromArgs(char* args, bool popLastObject = false);
+
 #include "Anticheat/module/AnticheatChatCommandsFunctions.h"
 
         bool HandleAccountCommand(char* args);
@@ -498,6 +500,7 @@ class ChatHandler
         bool HandleNpcFlagCommand(char* args);
         bool HandleNpcFollowCommand(char* args);
         bool HandleNpcInfoCommand(char* args);
+        bool HandleNpcMacroCommand(char* args);
         bool HandleNpcThreatCommand(char* args);
         bool HandleNpcMoveCommand(char* args);
         bool HandleNpcPlayEmoteCommand(char* args);
@@ -753,6 +756,7 @@ class ChatHandler
         bool HandleDamageCommand(char* args);
         bool HandleReviveCommand(char* args);
         bool HandleModifyMorphCommand(char* args);
+        bool HandleTpCommand(char* args);
         bool HandleAuraCommand(char* args);
         bool HandleUnAuraCommand(char* args);
         bool HandleLinkGraveCommand(char* args);
@@ -890,6 +894,9 @@ class ChatHandler
         bool HandleSendItemsHelper(MailDraft& draft, char* args);
         bool HandleSendMailHelper(MailDraft& draft, char* args);
         bool HandleSendMoneyHelper(MailDraft& draft, char* args);
+
+        bool HandleConvertToRaid(char* args);
+        bool HandleComeCommand(char* args);
 
         template<typename T>
         void ShowNpcOrGoSpawnInformation(uint32 guid);

@@ -132,7 +132,7 @@ class Map : public GridRefManager<NGridType>
         friend class ObjectWorldLoader;
 
     protected:
-        Map(uint32 id, time_t, uint32 InstanceId, uint8 SpawnMode);
+        Map(uint32 id, time_t expiry, uint32 InstanceId, uint8 SpawnMode, Group* group);
 
     public:
         virtual ~Map();
@@ -172,6 +172,10 @@ class Map : public GridRefManager<NGridType>
         void ExecuteMapWorker(std::function<void(Player*)> const& worker);
         void ExecuteMapWorkerZone(uint32 zoneId, std::function<void(Player*)> const& worker);
         void ExecuteMapWorkerArea(uint32 areaId, std::function<void(Player*)> const& worker);
+
+        // Only for debugging purposes:
+        Player* GetPlayerByName(std::string name);
+        uint32 GetPlayersCountInAutoscaleDistance(Position const& position);
 
         float GetVisibilityDistance() const { return m_VisibleDistance; }
         // function for setting up visibility distance for maps on per-type/per-Id basis
@@ -220,6 +224,7 @@ class Map : public GridRefManager<NGridType>
         bool CreatureRespawnRelocation(Creature* c);        // used only in CreatureRelocation and ObjectGridUnloader
 
         uint32 GetInstanceId() const { return i_InstanceId; }
+        Group* GetGroup() const { return m_group; }
 
         MaNGOS::unique_weak_ptr<Map> GetWeakPtr() const { return m_weakRef; }
         void SetWeakPtr(MaNGOS::unique_weak_ptr<Map> weakRef) { m_weakRef = std::move(weakRef); }
@@ -242,7 +247,7 @@ class Map : public GridRefManager<NGridType>
         TimePoint const& GetNewDifficultyCooldown() const { return m_dynamicDifficultyCooldown; }
 
         uint32 GetExpansion() const { return (i_mapEntry) ? i_mapEntry->Expansion() : 0u; }
-        float GetXPModRate(RateModType type) const;
+        float GetXPModRate(RateModType type, Unit const* unit) const;
 
         MapEntry const* GetEntry() const { return i_mapEntry; }
         bool Instanceable() const { return i_mapEntry && i_mapEntry->Instanceable(); }
@@ -273,6 +278,7 @@ class Map : public GridRefManager<NGridType>
 
         bool HavePlayers() const { return !m_mapRefManager.isEmpty(); }
         uint32 GetPlayersCountExceptGMs() const;
+        uint32 GetPlayersCount() const;
         bool ActiveObjectsNearGrid(uint32 x, uint32 y) const;
 
         /// Send a Packet to all players on a map
@@ -524,6 +530,8 @@ class Map : public GridRefManager<NGridType>
         std::set<Unit*> m_waypointingNpcs;
 
     protected:
+        Group* m_group;
+
         MapEntry const* i_mapEntry;
         uint8 i_spawnMode;
         uint32 i_id;
@@ -580,6 +588,10 @@ class Map : public GridRefManager<NGridType>
         ObjectGuidGenerator<HIGHGUID_PET> m_PetGuids;
         ObjectGuidGenerator<HIGHGUID_VEHICLE> m_VehicleGuids;
         ObjectGuidGenerator<HIGHGUID_MO_TRANSPORT> m_transportGuids;
+
+        float m_scalingMaxDistance;
+        float m_scalingCombatDistance;
+        uint32 m_scalingMinPlayerLevel;
 
         // Type specific code for add/remove to/from grid
         template<class T>
@@ -639,7 +651,7 @@ class WorldMap : public Map
     private:
         using Map::GetPersistentState;                      // hide in subclass for overwrite
     public:
-        WorldMap(uint32 id, time_t expiry, uint32 InstanceId) : Map(id, expiry, InstanceId, REGULAR_DIFFICULTY) {}
+        WorldMap(uint32 id, time_t expiry, uint32 InstanceId) : Map(id, expiry, InstanceId, REGULAR_DIFFICULTY, nullptr) {}
         ~WorldMap() {}
 
         // can't be nullptr for loaded map
@@ -651,7 +663,7 @@ class DungeonMap : public Map
     private:
         using Map::GetPersistentState;                      // hide in subclass for overwrite
     public:
-        DungeonMap(uint32 id, time_t, uint32 InstanceId, uint8 SpawnMode);
+        DungeonMap(uint32 id, time_t, uint32 InstanceId, uint8 SpawnMode, Group* group);
         ~DungeonMap();
         bool Add(Player*) override;
         void Remove(Player*, bool) override;

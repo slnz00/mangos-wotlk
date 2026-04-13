@@ -591,6 +591,12 @@ enum TemporaryFactionFlags                                  // Used at real fact
     TEMPFACTION_ALL,
 };
 
+enum AttributeScaleTypes
+{
+    STYPE_DAMAGE,
+    STYPE_HEALTH,
+};
+
 class Creature : public Unit
 {
     public:
@@ -605,8 +611,12 @@ class Creature : public Unit
         bool Create(uint32 dbGuid, uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* cinfo, const CreatureData* data = nullptr, GameEventCreatureData const* eventData = nullptr);
         bool LoadCreatureAddon(bool reload);
 
+        float GetDefaultScale(AttributeScaleTypes type, bool inDungeon) const;
+        float GetAdditionalScale(AttributeScaleTypes type, bool inDungeon) const;
+        float GetScaleMultiplier(AttributeScaleTypes type) const; 
+
         // SelectLevel set creature bases stats for given level or for default levels stored in db
-        void SelectLevel(uint32 forcedLevel = USE_DEFAULT_DATABASE_LEVEL);
+        void SelectLevel(uint32 forcedLevel = USE_DEFAULT_DATABASE_LEVEL, bool preserveHealthAndPower = false);
         void LoadEquipment(uint32 equip_entry, bool force = false);
 
         bool HasStaticDBSpawnData() const;                  // listed in `creature` table and have fixed in DB guid
@@ -665,12 +675,43 @@ class Creature : public Unit
             return rank != CREATURE_ELITE_NORMAL && rank != CREATURE_ELITE_RARE;
         }
 
+        bool IsRare() const
+        {
+            if (IsPet())
+                return false;
+
+            uint32 rank = GetCreatureInfo()->Rank;
+            return rank == CREATURE_ELITE_RARE;
+        }
+
+        bool IsNpc() const
+        {
+            return m_creatureInfo->NpcFlags != 0;
+        }
+
+        bool IsBoss() const
+        {
+            if (IsPet())
+                return false;
+
+            uint32 rank = GetCreatureInfo()->Rank;
+            return rank == CREATURE_ELITE_RAREELITE || rank == CREATURE_ELITE_WORLDBOSS;
+        }
+
         bool IsWorldBoss() const
         {
             if (IsPet())
                 return false;
 
             return GetCreatureInfo()->Rank == CREATURE_ELITE_WORLDBOSS;
+        }
+
+        bool IsNormal() const
+        {
+            if (IsPet())
+                return false;
+
+            return GetCreatureInfo()->Rank == CREATURE_ELITE_NORMAL;
         }
 
         uint32 GetLevelForTarget(Unit const* target) const override; // overwrite Unit::GetLevelForTarget for boss level support
@@ -708,6 +749,9 @@ class Creature : public Unit
         void UpdateSpell(int32 index, int32 newSpellId);
         void SetSpellList(uint32 spellSet);
         void UpdateImmunitiesSet(uint32 immunitySet);
+
+        void UpdateAutoscale();
+        void PrintAutoscaleDebugInfo(Player const* targetedBy);
 
         bool UpdateEntry(uint32 Entry, const CreatureData* data = nullptr, GameEventCreatureData const* eventData = nullptr, bool preserveHPAndPower = true, bool randomizeLevels = true);
         void ResetEntry(bool respawn = false);
@@ -988,6 +1032,17 @@ class Creature : public Unit
 
         // vendor items
         VendorItemCounts m_vendorItemCounts;
+
+        // creature autoscaling options:
+        bool m_scalingEnabledWorld;
+        bool m_scalingEnabledInstance;
+        uint32 m_scalingPlayersThreshold;
+        uint32 m_scalingDownscaleDelayMS;
+        uint32 m_scalingDownscaleAt = 0;
+        uint32 m_scalingNextUpdateAt = 0;
+        // dungeon -> actual players count in autoscale distance
+        // world -> additional players count in autoscale distance (actual count - players threshold)
+        uint32 m_scalingPlayersCount = 0;
 
         uint32 m_gossipMenuId;
         uint32 m_lootMoney;

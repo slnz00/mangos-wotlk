@@ -30,6 +30,61 @@
 #include "revision.h"
 #include "Util/Util.h"
 
+bool ChatHandler::HandleTpCommand(char* args)
+{
+    Player* player = m_session->GetPlayer();
+
+    if (!player) {
+        SendSysMessage("Cannot teleport to the entrance: Internal error, player does not exist!");
+        return true;
+    }
+
+    Map const* map = player->GetMap();
+    MapEntry const* mapEntry = sMapStore.LookupEntry(player->GetMapId());
+
+    if (!map || !mapEntry || !mapEntry->IsDungeon())
+    {
+        SendSysMessage("Cannot teleport to the entrance: you are not in a dungeon!");
+        return true;
+    }
+
+    for (const auto& itr : map->GetPlayers())
+    {
+        Player const* playerFromMap = itr.getSource();
+        
+        if (playerFromMap && playerFromMap->IsInCombat())
+        {
+            SendSysMessage("Cannot teleport to the entrance: your group is in combat!");
+            return true;
+        }
+    }
+
+    AreaTrigger const* at = sObjectMgr.GetMapEntranceTrigger(mapEntry->MapID);
+
+    if (!at)
+    {
+        SendSysMessage("Cannot teleport to the entrance: Internal error, dungeon entrance does not exist!");
+        return true;
+    }
+
+    player->TeleportTo(at->target_mapId, at->target_X, at->target_Y, at->target_Z, at->target_Orientation + M_PI);
+
+    return true;
+}
+
+bool ChatHandler::HandleConvertToRaid(char* args)
+{
+    Player* player = m_session->GetPlayer();
+    Group* group = player ? player->GetGroup() : nullptr;
+
+    if (group && !group->IsRaidGroup() && (player->IsGameMaster() || group->IsLeader(player->GetObjectGuid())))
+    {
+        group->ConvertToRaid();
+    }
+
+    return true;
+}
+
 bool ChatHandler::HandleHelpCommand(char* args)
 {
     if (!*args)

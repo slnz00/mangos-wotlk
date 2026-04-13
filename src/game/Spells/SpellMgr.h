@@ -2106,28 +2106,28 @@ enum ProcFlags : uint32
                                  PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_NEG)
 enum ProcFlagsEx
 {
-    PROC_EX_NONE                = 0x0000000,                // If none can tigger on Hit/Crit only (passive spells MUST defined by SpellFamily flag)
-    PROC_EX_NORMAL_HIT          = 0x0000001,                // If set only from normal hit (only damage spells)
-    PROC_EX_CRITICAL_HIT        = 0x0000002,
-    PROC_EX_MISS                = 0x0000004,
-    PROC_EX_RESIST              = 0x0000008,
-    PROC_EX_DODGE               = 0x0000010,
-    PROC_EX_PARRY               = 0x0000020,
-    PROC_EX_BLOCK               = 0x0000040,
-    PROC_EX_EVADE               = 0x0000080,
-    PROC_EX_IMMUNE              = 0x0000100,
-    PROC_EX_DEFLECT             = 0x0000200,
-    PROC_EX_ABSORB              = 0x0000400,
-    PROC_EX_REFLECT             = 0x0000800,
-    PROC_EX_INTERRUPT           = 0x0001000,                // melee hit result can be Interrupt (not used)
-    PROC_EX_FULL_BLOCK          = 0x0002000,                // block al attack damage
-    PROC_EX_RESERVED2           = 0x0004000,
-    PROC_EX_RESERVED3           = 0x0008000,
-    PROC_EX_EX_TRIGGER_ON_NO_DAMAGE = 0x0010000,            // if set, hits trigger even if no damage/healing is dealt
-    PROC_EX_EX_ONE_TIME_TRIGGER = 0x0020000,                // if set trigger always but only one time (not used)
-    PROC_EX_PERIODIC_POSITIVE   = 0x0040000,                // for periodic heal
-    PROC_EX_CAST_END            = 0x0080000,                // procs on end of cast
-    PROC_EX_MAGNET              = 0x0100000,                // for grounding totem hit
+    PROC_EX_NONE                = 0x0000000,                // 1  If none can tigger on Hit/Crit only (passive spells MUST defined by SpellFamily flag)
+    PROC_EX_NORMAL_HIT          = 0x0000001,                // 2  If set only from normal hit (only damage spells)
+    PROC_EX_CRITICAL_HIT        = 0x0000002,                // 3
+    PROC_EX_MISS                = 0x0000004,                // 4
+    PROC_EX_RESIST              = 0x0000008,                // 5
+    PROC_EX_DODGE               = 0x0000010,                // 6
+    PROC_EX_PARRY               = 0x0000020,                // 7
+    PROC_EX_BLOCK               = 0x0000040,                // 8
+    PROC_EX_EVADE               = 0x0000080,                // 9
+    PROC_EX_IMMUNE              = 0x0000100,                // 10
+    PROC_EX_DEFLECT             = 0x0000200,                // 11
+    PROC_EX_ABSORB              = 0x0000400,                // 12
+    PROC_EX_REFLECT             = 0x0000800,                // 13
+    PROC_EX_INTERRUPT           = 0x0001000,                // 14 melee hit result can be Interrupt (not used)
+    PROC_EX_FULL_BLOCK          = 0x0002000,                // 15 block al attack damage
+    PROC_EX_RESERVED2           = 0x0004000,                // 16
+    PROC_EX_RESERVED3           = 0x0008000,                // 17
+    PROC_EX_EX_TRIGGER_ON_NO_DAMAGE = 0x0010000,            // 18 if set, hits trigger even if no damage/healing is dealt
+    PROC_EX_EX_ONE_TIME_TRIGGER = 0x0020000,                // 19 if set trigger always but only one time (not used)
+    PROC_EX_PERIODIC_POSITIVE   = 0x0040000,                // 20 for periodic heal
+    PROC_EX_CAST_END            = 0x0080000,                // 21 procs on end of cast
+    PROC_EX_MAGNET              = 0x0100000,                // 22 for grounding totem hit
 
     // Flags for internal use - do not use these in db!
     PROC_EX_INTERNAL_HOT        = 0x2000000

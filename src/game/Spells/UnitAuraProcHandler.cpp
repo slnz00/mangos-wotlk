@@ -27,6 +27,7 @@
 #include "Entities/Totem.h"
 #include "Entities/Creature.h"
 #include "Util/Util.h"
+#include <World/World.h>
 
 pAuraProcHandler AuraProcHandler[TOTAL_AURAS] =
 {
@@ -1834,6 +1835,122 @@ SpellAuraProcResult Unit::HandleDummyAuraProc(ProcExecutionData& data)
                 {
                     triggered_spell_id = 70772;             // Blessed Healing
                     basepoints[0] = int32(triggerAmount * damage / 100) / GetSpellAuraMaxTicks(triggered_spell_id);
+                    break;
+                }
+                // Evangelism - Remove on heal:
+                case 91210: {
+                    RemoveAurasDueToSpell(91210);
+
+                    return SPELL_AURA_PROC_OK;
+                    break;
+                }
+                // Atonement
+                case 91300: {
+                    auto caster = static_cast<Player*>(triggeredByAura->GetCaster());
+                    if (!caster || !pVictim)
+                    {
+                        sLog.outError("Failed to cast Atonement heal, caster or victim is null");
+                        return SPELL_AURA_PROC_FAILED;
+                    }
+
+                    if (data.damage < 1)
+                    {
+                        return SPELL_AURA_PROC_FAILED;
+                    }
+
+                    Group::MemberSlotList groupMembers;
+                    auto group = caster->GetGroup();
+                    
+                    if (group)
+                    {
+                        groupMembers = group->GetMemberSlots();
+                    }
+                    else
+                    {
+                        groupMembers.push_back({
+                            caster->GetObjectGuid(),
+                            caster->GetName()
+                        });
+                    }
+
+                    
+                    float maxDistance = sWorld.getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_DISTANCE);
+
+                    Player* lowestHpPlayer = nullptr;
+                    Player* closestPlayer = nullptr;
+                    float closestDistance = maxDistance + 1.0f;
+
+                    for (auto slot = groupMembers.begin(); slot != groupMembers.end(); ++slot)
+                    {
+                        auto current = sObjectMgr.GetPlayer(slot->guid);
+                        auto map = current ? current->GetMap() : nullptr;
+
+                        if (!current || !map || map != pVictim->GetMap())
+                        {
+                            continue;
+                        }
+
+                        float x, y, z;
+                        current->GetPosition(x, y, z);
+                        float distance = pVictim->GetDistance(x, y, z);
+                        
+                        if (distance > maxDistance)
+                        {
+                            continue;
+                        }
+
+                        if (distance < closestDistance)
+                        {
+                            closestPlayer = current;
+                            closestDistance = distance;
+                        }
+
+                        // We should not track full hp players. If everyone is full, the closest player to the victim should be healed.
+                        if (current->GetHealth() == current->GetMaxHealth())
+                        {
+                            continue;
+                        }
+
+                        if (!lowestHpPlayer || current->GetHealthPercent() < lowestHpPlayer->GetHealthPercent())
+                        {
+                            lowestHpPlayer = current;
+                        }
+                    }
+
+                    Player* healTarget = lowestHpPlayer ? lowestHpPlayer : closestPlayer;
+                    if (!healTarget) 
+                    {
+                        sLog.outError("The Atonement heal target is null, this's probably a bug and should not happen");
+                        return SPELL_AURA_PROC_FAILED;
+                    }
+
+                    float multiplier = 1.0f;
+                    uint32 levelBracket = caster->GetLevel() / 10;
+                    if (levelBracket <= std::size(sWorld.atonementMulti))
+                    {
+                        multiplier = sWorld.atonementMulti[levelBracket];
+                    }
+                    else
+                    {
+                        sLog.outError("Caster level is larger than 80, cannot determine atonement multiplier");
+                    }
+                    
+                    // The caster should receive half of the healing amount
+                    if (caster == healTarget)
+                    {
+                        multiplier *= 0.5f;
+                    }
+
+                    int32 healAmount = (data.damage * multiplier) - 1;
+                    if (healAmount < 1)
+                    {
+                        return SPELL_AURA_PROC_FAILED;
+                    }
+
+                    // Cast atonement's healing vehicle spell
+                    caster->CastCustomSpell(healTarget, 91310, &healAmount, nullptr, nullptr, TRIGGERED_OLD_TRIGGERED);
+
+                    return SPELL_AURA_PROC_OK;
                     break;
                 }
             }

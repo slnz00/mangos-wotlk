@@ -927,6 +927,78 @@ void World::LoadConfigSettings(bool reload)
     setConfig(CONFIG_UINT32_SUNSREACH_COUNTER, "Sunsreach.CounterMax", 10000);
 
     setConfig(CONFIG_BOOL_REGEN_ZONE_AREA_ON_STARTUP, "Spawns.ZoneArea", false);
+    setConfig(CONFIG_BOOL_REGEN_ZONE_AREA_ON_STARTUP, "Spawns.ZoneArea", false);
+
+    setConfig(CONFIG_BOOL_XP_AUTOSCALE, "XP.AutoScaling", false);
+    setConfig(CONFIG_FLOAT_XP_AUTOSCALE_FACTOR_KILL, "XP.AutoScaling.Factor.Kill", 0.07);
+    setConfig(CONFIG_FLOAT_XP_AUTOSCALE_FACTOR_QUEST, "XP.AutoScaling.Factor.Quest", 0.07);
+
+    setConfig(CONFIG_BOOL_CREATURE_AUTOSCALE_WORLD, "Creature.AutoScaling.World", false);
+    setConfig(CONFIG_BOOL_CREATURE_AUTOSCALE_INSTANCE, "Creature.AutoScaling.Instance", false);
+    setConfig(CONFIG_UINT32_CREATURE_AUTOSCALE_PLAYERS_THRESHOLD, "Creature.AutoScaling.PlayersThreshold", 1);
+    setConfig(CONFIG_UINT32_CREATURE_AUTOSCALE_MIN_PLAYER_LEVEL, "Creature.AutoScaling.MinPlayerLevel", 0);
+    setConfig(CONFIG_UINT32_CREATURE_AUTOSCALE_DOWNSCALE_DELAY, "Creature.AutoScaling.DownScaleDelaySecs", 5);
+    setConfig(CONFIG_FLOAT_CREATURE_AUTOSCALE_DISTANCE_MAX, "Creature.AutoScaling.Distance.Max", 45.0f);
+    setConfig(CONFIG_FLOAT_CREATURE_AUTOSCALE_DISTANCE_COMBAT, "Creature.AutoScaling.Distance.Combat", 27.0f);
+    setConfig(CONFIG_FLOAT_CREATURE_AUTOSCALE_RATE_NORMAL_HEALTH, "Creature.AutoScaling.Rate.Normal.Health", 0.25f);
+    setConfig(CONFIG_FLOAT_CREATURE_AUTOSCALE_RATE_NORMAL_DAMAGE, "Creature.AutoScaling.Rate.Normal.Damage", 0.25f);
+    setConfig(CONFIG_FLOAT_CREATURE_AUTOSCALE_RATE_RARE_HEALTH, "Creature.AutoScaling.Rate.Rare.Health", 0.25f);
+    setConfig(CONFIG_FLOAT_CREATURE_AUTOSCALE_RATE_RARE_DAMAGE, "Creature.AutoScaling.Rate.Rare.Damage", 0.25f);
+    setConfig(CONFIG_FLOAT_CREATURE_AUTOSCALE_RATE_INSTANCE_HEALTH, "Creature.AutoScaling.Rate.Instance.Health", 0.25f);
+    setConfig(CONFIG_FLOAT_CREATURE_AUTOSCALE_RATE_INSTANCE_DAMAGE, "Creature.AutoScaling.Rate.Instance.Damage", 0.25f);
+
+    setConfig(CONFIG_FLOAT_SCALE_NORMAL_DAMAGE, "Creature.Scale.Normal.Damage", 1.0f);
+    setConfig(CONFIG_FLOAT_SCALE_NORMAL_HEALTH, "Creature.Scale.Normal.Health", 1.0f);
+    setConfig(CONFIG_FLOAT_SCALE_RARE_DAMAGE, "Creature.Scale.Rare.Damage", 1.0f);
+    setConfig(CONFIG_FLOAT_SCALE_RARE_HEALTH, "Creature.Scale.Rare.Health", 1.0f);
+    setConfig(CONFIG_FLOAT_SCALE_INSTANCE_DAMAGE, "Creature.Scale.Instance.Damage", 1.0f);
+    setConfig(CONFIG_FLOAT_SCALE_INSTANCE_HEALTH, "Creature.Scale.Instance.Health", 1.0f);
+
+    setConfig(CONFIG_FLOAT_DOUBLE_DROP_CHANCE_NORMAL, "Creature.DoubleDrop.Chance.Normal", 0.0f);
+    setConfig(CONFIG_FLOAT_DOUBLE_DROP_CHANCE_ELITE, "Creature.DoubleDrop.Chance.Elite", 0.0f);
+    setConfig(CONFIG_FLOAT_DOUBLE_DROP_CHANCE_RARE, "Creature.DoubleDrop.Chance.Rare", 0.0f);
+    setConfig(CONFIG_FLOAT_DOUBLE_DROP_CHANCE_BOSS, "Creature.DoubleDrop.Chance.Boss", 0.0f);
+
+    setConfig(CONFIG_FLOAT_DROP_MIN_CHANCE_NORMAL, "Creature.Drop.MinChance.Normal", 0.0f);
+    setConfig(CONFIG_FLOAT_DROP_MIN_CHANCE_ELITE, "Creature.Drop.MinChance.Elite", 0.0f);
+    setConfig(CONFIG_FLOAT_DROP_MIN_CHANCE_RARE, "Creature.Drop.MinChance.Rare", 0.0f);
+    setConfig(CONFIG_FLOAT_DROP_MIN_CHANCE_BOSS, "Creature.Drop.MinChance.Boss", 0.0f);
+    setConfig(CONFIG_UINT32_DROP_MIN_ITEMS_NORMAL, "Creature.Drop.MinItems.Normal", 0);
+    setConfig(CONFIG_UINT32_DROP_MIN_ITEMS_ELITE, "Creature.Drop.MinItems.Elite", 0);
+    setConfig(CONFIG_UINT32_DROP_MIN_ITEMS_RARE, "Creature.Drop.MinItems.Rare", 0);
+    setConfig(CONFIG_UINT32_DROP_MIN_ITEMS_BOSS, "Creature.Drop.MinItems.Boss", 0);
+    setConfig(CONFIG_UINT32_DROP_MAX_ITEMS_NORMAL, "Creature.Drop.MaxItems.Normal", 0);
+    setConfig(CONFIG_UINT32_DROP_MAX_ITEMS_ELITE, "Creature.Drop.MaxItems.Elite", 0);
+    setConfig(CONFIG_UINT32_DROP_MAX_ITEMS_RARE, "Creature.Drop.MaxItems.Rare", 0);
+    setConfig(CONFIG_UINT32_DROP_MAX_ITEMS_BOSS, "Creature.Drop.MaxItems.Boss", 0);
+    
+    setConfig(CONFIG_FLOAT_RATE_DROP_AMOUNT_ITEM_QUEST_MIN, "Rate.DropAmount.Item.Quest.Min", 1.0f);
+    setConfig(CONFIG_FLOAT_RATE_DROP_AMOUNT_ITEM_QUEST_MAX, "Rate.DropAmount.Item.Quest.Max", 1.0f);
+
+    setConfig(CONFIG_BOOL_GROUP_ROLL_IN_FFA, "Group.Loot.RollInFreeForAll", false);
+
+    setConfig(CONFIG_FLOAT_RATE_FISHING_CHANCE, "Rate.Fishing.Chance", 1.0f);
+
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_DISTANCE, "Priest.Atonement.Distance", 40.0f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_0,  "Priest.Atonement.Multiplier.Level0",  1.4f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_10, "Priest.Atonement.Multiplier.Level10", 1.6f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_20, "Priest.Atonement.Multiplier.Level20", 1.5f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_30, "Priest.Atonement.Multiplier.Level30", 1.3f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_40, "Priest.Atonement.Multiplier.Level40", 1.4f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_50, "Priest.Atonement.Multiplier.Level50", 1.5f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_60, "Priest.Atonement.Multiplier.Level60", 1.6f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_70, "Priest.Atonement.Multiplier.Level70", 1.75f);
+    setConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_80, "Priest.Atonement.Multiplier.Level80", 2.1f);
+
+    atonementMulti[0] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_0);
+    atonementMulti[1] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_10);
+    atonementMulti[2] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_20);
+    atonementMulti[3] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_30);
+    atonementMulti[4] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_40);
+    atonementMulti[5] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_50);
+    atonementMulti[6] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_60);
+    atonementMulti[7] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_70);
+    atonementMulti[8] = getConfig(CONFIG_FLOAT_PRIEST_ATONEMENT_MULTI_80);
 
     sLog.outString();
 }

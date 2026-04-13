@@ -602,7 +602,7 @@ class Creature : public Unit
     public:
 
         explicit Creature(CreatureSubtype subtype = CREATURE_SUBTYPE_GENERIC);
-        virtual ~Creature();
+        virtual ~Creature() override;
 
         void AddToWorld() override;
         void RemoveFromWorld() override;
@@ -826,7 +826,7 @@ class Creature : public Unit
         void CallAssistance(Unit* enemy);
         void SetNoCallAssistance(bool val) { m_AlreadyCallAssistance = val; }
         bool CanAssistTo(const Unit* u, const Unit* enemy, bool checkfaction = true) const;
-        bool CanInitiateAttack() const;
+        bool CanInitiateAttack() const override;
         bool CanCallForAssistance() const override { return m_canCallForAssistance; }
         void SetCanCallForAssistance(bool state) { m_canCallForAssistance = state; }
         bool IsInGroup(Unit const* other, bool party/* = false*/, bool ignoreCharms/* = false*/) const override;
@@ -893,7 +893,7 @@ class Creature : public Unit
 
         void SendAreaSpiritHealerQueryOpcode(Player* pl) const;
 
-        void SetVirtualItem(VirtualItemSlot slot, uint32 item_id) { SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID + slot, item_id); }
+        void SetVirtualItem(VirtualItemSlot slot, uint32 item_id) { SetUInt32Value(static_cast<uint16>(UNIT_VIRTUAL_ITEM_SLOT_ID) + static_cast<uint16>(slot), item_id); }
 
         bool hasWeapon(WeaponAttackType type) const override;
         bool hasWeaponForAttack(WeaponAttackType type) const override { return (Unit::hasWeaponForAttack(type) && hasWeapon(type)); }

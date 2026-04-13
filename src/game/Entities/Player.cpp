@@ -5661,7 +5661,7 @@ float Player::GetRatingMultiplier(CombatRating cr) const
 
 float Player::GetRatingBonusValue(CombatRating cr) const
 {
-    return float(GetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + cr)) * GetRatingMultiplier(cr);
+    return float(GetUInt32Value(static_cast<uint16>(PLAYER_FIELD_COMBAT_RATING_1) + static_cast<uint16>(cr))) * GetRatingMultiplier(cr);
 }
 
 void Player::ApplyRatingMod(CombatRating cr, int32 value, bool apply)
@@ -5708,7 +5708,7 @@ void Player::UpdateRating(CombatRating cr)
             amount += int32(GetStat(Stats(i->GetMiscBValue())) * i->GetModifier()->m_amount / 100.0f);
     if (amount < 0)
         amount = 0;
-    SetUInt32Value(PLAYER_FIELD_COMBAT_RATING_1 + cr, uint32(amount));
+    SetUInt32Value(static_cast<uint16>(PLAYER_FIELD_COMBAT_RATING_1) + static_cast<uint16>(cr), uint32(amount));
 
     bool affectStats = CanModifyStats();
 
@@ -16405,7 +16405,7 @@ bool Player::LoadFromDB(ObjectGuid guid, SqlQueryHolder* holder)
     uint32 money = fields[8].GetUInt32();
     if (money > MAX_MONEY_AMOUNT)
         money = MAX_MONEY_AMOUNT;
-    SetMoney(money);
+    SetMoney(money, true);
 
     SetUInt32Value(PLAYER_BYTES, fields[9].GetUInt32());
     SetUInt32Value(PLAYER_BYTES_2, fields[10].GetUInt32());

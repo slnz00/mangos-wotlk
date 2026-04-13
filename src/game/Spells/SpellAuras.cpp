@@ -6874,7 +6874,7 @@ void Aura::HandleAuraModIncreaseEnergy(bool apply, bool Real)
     Unit* target = GetTarget();
     Powers powerType = Powers(m_modifier.m_miscvalue);
 
-    UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + powerType);
+    UnitMods unitMod = UnitMods(static_cast<uint32>(UNIT_MOD_POWER_START) + static_cast<uint32>(powerType));
 
     // Special case with temporary increase max/current power (percent)
     if (GetId() == 64904)                                   // Hymn of Hope
@@ -6897,7 +6897,7 @@ void Aura::HandleAuraModIncreaseEnergyPercent(bool apply, bool /*Real*/)
     Unit* target = GetTarget();
     Powers powerType = Powers(m_modifier.m_miscvalue);
 
-    UnitMods unitMod = UnitMods(UNIT_MOD_POWER_START + powerType);
+    UnitMods unitMod = UnitMods(static_cast<uint32>(UNIT_MOD_POWER_START) + static_cast<uint32>(powerType));
 
     target->HandleStatModifier(unitMod, TOTAL_PCT, float(m_modifier.m_amount), apply);
     target->ModifyPower(powerType, apply ? m_modifier.m_amount : -m_modifier.m_amount);
@@ -8330,8 +8330,8 @@ void Aura::PeriodicTick()
             if (!pCaster)
                 break;
 
-            // don't heal target if max health or if not alive, mostly death persistent effects from items
-            if (!target->IsAlive() || (target->GetHealth() == target->GetMaxHealth()))
+            // don't heal target if not alive, mostly death persistent effects from items
+            if (!target->IsAlive())
                 break;
 
             // heal for caster damage (must be alive)

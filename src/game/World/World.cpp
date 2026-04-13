@@ -357,6 +357,8 @@ bool World::RemoveQueuedSession(WorldSession* sess)
         pop_sess->SetInQueue(false);
         pop_sess->SendAuthWaitQue(0);
 
+        pop_sess->SendAccountDataTimes(GLOBAL_CACHE_MASK);
+
         m_QueuedSessions.pop_front();
 
         // update iter to point first queued socket or end() if queue is empty now

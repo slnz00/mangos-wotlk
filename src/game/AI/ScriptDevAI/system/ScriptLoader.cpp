@@ -506,6 +506,9 @@ extern void AddSC_boss_terokk();
 extern void AddSC_OutlandWorldScript();
 extern void AddSC_zangarmarsh();
 
+extern void AddSC_petya();
+extern void AddSC_sus_goblin();
+
 void AddScripts()
 {
     // battlegrounds
@@ -1009,4 +1012,7 @@ void AddScripts()
     AddSC_boss_terokk();
     AddSC_OutlandWorldScript();
     AddSC_zangarmarsh();
+
+    AddSC_petya();
+    AddSC_sus_goblin();
 }

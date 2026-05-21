@@ -5898,6 +5898,8 @@ bool Player::UpdateGatherSkill(uint32 SkillId, uint32 SkillValue, uint32 RedLeve
     DEBUG_LOG("UpdateGatherSkill(SkillId %d SkillLevel %d RedLevel %d)", SkillId, SkillValue, RedLevel);
 
     uint32 gathering_skill_gain = sWorld.getConfig(CONFIG_UINT32_SKILL_GAIN_GATHERING);
+    uint32 herbalism_skill_gain = sWorld.getConfig(CONFIG_UINT32_SKILL_GAIN_HERBALISM);
+    uint32 skinning_skill_gain = sWorld.getConfig(CONFIG_UINT32_SKILL_GAIN_SKINNING);
 
     if (RedLevel == 1) // stuff that starts at 1 should stop at 105 not 101
         RedLevel = 5;
@@ -5906,6 +5908,7 @@ bool Player::UpdateGatherSkill(uint32 SkillId, uint32 SkillValue, uint32 RedLeve
     switch (SkillId)
     {
         case SKILL_HERBALISM:
+            return UpdateSkillPro(SkillId, SkillGainChance(SkillValue, RedLevel + 100, RedLevel + 50, RedLevel + 25) * Multiplicator, herbalism_skill_gain);
         case SKILL_LOCKPICKING:
         case SKILL_JEWELCRAFTING:
         case SKILL_INSCRIPTION:
@@ -5913,7 +5916,7 @@ bool Player::UpdateGatherSkill(uint32 SkillId, uint32 SkillValue, uint32 RedLeve
         case SKILL_SKINNING:
         {
             if (sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_SKINNING_STEPS) == 0)
-                return UpdateSkillPro(SkillId, SkillGainChance(SkillValue, RedLevel + 100, RedLevel + 50, RedLevel + 25) * Multiplicator, gathering_skill_gain);
+                return UpdateSkillPro(SkillId, SkillGainChance(SkillValue, RedLevel + 100, RedLevel + 50, RedLevel + 25) * Multiplicator, skinning_skill_gain);
             return UpdateSkillPro(SkillId, (SkillGainChance(SkillValue, RedLevel + 100, RedLevel + 50, RedLevel + 25) * Multiplicator) >> (SkillValue / sWorld.getConfig(CONFIG_UINT32_SKILL_CHANCE_SKINNING_STEPS)), gathering_skill_gain);
         }
         case SKILL_MINING:

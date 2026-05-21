@@ -182,8 +182,11 @@ void LootStore::LoadLootTable()
             if (!IsValidItemTemplate(entry, item, group, mincountOrRef, chanceOrQuestChance, maxcount))
                 continue;
 
+            ItemPrototype const* proto = ObjectMgr::GetItemPrototype(item);
+
+            bool isStackable = proto && proto->Stackable;
             bool isQuestItem = chanceOrQuestChance < 0.0f;
-            bool isGuaranteed = chanceOrQuestChance == -100.0f;
+            bool isGuaranteed = chanceOrQuestChance == -100.0f && !isStackable;
 
             if (isQuestItem && !isGuaranteed && mincountOrRef > 0 && maxcount > 0)
             {

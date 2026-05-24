@@ -184,11 +184,12 @@ void LootStore::LoadLootTable()
 
             ItemPrototype const* proto = ObjectMgr::GetItemPrototype(item);
 
-            bool isStackable = proto && proto->Stackable;
+            bool isUnique = proto && proto->MaxCount > 0;
+            bool isStackable = proto && proto->Stackable > 1;
             bool isQuestItem = chanceOrQuestChance < 0.0f;
             bool isGuaranteed = chanceOrQuestChance == -100.0f && !isStackable;
 
-            if (isQuestItem && !isGuaranteed && mincountOrRef > 0 && maxcount > 0)
+            if (isQuestItem && !isGuaranteed && !isUnique && mincountOrRef > 0 && maxcount > 0)
             {
                 mincountOrRef *= questItemMultiMin;
                 maxcount *= questItemMultiMax;

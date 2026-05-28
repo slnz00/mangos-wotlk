@@ -797,7 +797,7 @@ uint32 Map::GetPlayersCountInAutoscaleDistance(Position const& position)
         auto player = itr.getSource();
         auto playerDistance = player->GetDistance(position.x, position.y, position.z);
 
-        if (playerDistance > m_scalingMaxDistance || player->GetLevel() < m_scalingMinPlayerLevel)
+        if (playerDistance > m_scalingMaxDistance || player->GetLevel() < m_scalingMinPlayerLevel || player->IsDead())
         {
             continue;
         }
